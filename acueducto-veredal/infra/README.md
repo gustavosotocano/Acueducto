@@ -1,2 +1,1 @@
-# Infra
-Docker Compose
+Docker Compose for Postgres, backend, frontend

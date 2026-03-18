@@ -1,1 +1,1 @@
-# Frontend Angular
+# Angular frontend with i18n

@@ -1,2 +1,11 @@
 # Domain Model
-Entities: tenant, owner, water_right, invoice...
+
+Core:
+- Tenant
+- Owner
+- WaterRight
+- WaterRightOwnershipHistory
+- WaterRightPropertyHistory
+- Invoice / InvoiceItem
+- Payment / PaymentApplication
+- Expense / MonthlyClosing

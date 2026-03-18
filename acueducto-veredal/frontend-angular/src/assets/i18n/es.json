@@ -1,0 +1,11 @@
+{
+  "owner": {
+    "title": "Propietarios"
+  },
+  "waterRight": {
+    "title": "Derechos de agua"
+  },
+  "invoice": {
+    "title": "Facturas"
+  }
+}
