@@ -1,3 +1,23 @@
 node_modules/
 target/
 .env
+# Backend
+/target/
+*.log
+
+# Frontend Angular
+frontend-angular/node_modules/
+frontend-angular/dist/
+frontend-angular/.angular/
+
+# IDE
+.idea/
+.vscode/
+*.iml
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Env
+.env.*

@@ -1,0 +1,53 @@
+version: "3.9"
+
+services:
+  postgres:
+    image: postgres:16
+    container_name: acueducto-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: acueducto_veredal
+      POSTGRES_USER: acueducto_user
+      POSTGRES_PASSWORD: acueducto_pass
+      TZ: America/Bogota
+      PGTZ: America/Bogota
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./postgresql/init:/docker-entrypoint-initdb.d
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U acueducto_user -d acueducto_veredal"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+    networks:
+      - acueducto-net
+
+  pgadmin:
+    image: dpage/pgadmin4:8
+    container_name: acueducto-pgadmin
+    restart: unless-stopped
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@acueducto.local
+      PGADMIN_DEFAULT_PASSWORD: admin123
+      PGADMIN_CONFIG_SERVER_MODE: "False"
+      TZ: America/Bogota
+    ports:
+      - "8081:80"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - pgadmin_data:/var/lib/pgadmin
+    networks:
+      - acueducto-net
+
+volumes:
+  postgres_data:
+  pgadmin_data:
+
+networks:
+  acueducto-net:
+    driver: bridge
