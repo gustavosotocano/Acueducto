@@ -1,5 +1,5 @@
-import { AsyncPipe } from '@angular/common';
-import { Component, inject } from '@angular/core';
+import { AsyncPipe, CurrencyPipe } from '@angular/common';
+import { Component, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
@@ -10,13 +10,15 @@ import { MatInputModule } from '@angular/material/input';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatTableModule } from '@angular/material/table';
-import { BehaviorSubject, catchError, of, shareReplay, switchMap, tap } from 'rxjs';
+import { BehaviorSubject, catchError, combineLatest, map, of, shareReplay, switchMap, tap } from 'rxjs';
+import { WaterRight, WaterRightsService } from '../water-rights/water-rights.service';
 import { CreateOwnerRequest, Owner, OwnersService, UpdateOwnerRequest } from './owners.service';
 
 @Component({
   selector: 'app-owners-page',
   imports: [
     AsyncPipe,
+    CurrencyPipe,
     ReactiveFormsModule,
     MatTableModule,
     MatProgressSpinnerModule,
@@ -51,8 +53,30 @@ import { CreateOwnerRequest, Owner, OwnersService, UpdateOwnerRequest } from './
         <mat-card-title>Listado</mat-card-title>
       </mat-card-header>
       <mat-card-content>
-        @if (owners$ | async; as owners) {
-          <table mat-table [dataSource]="owners" class="mat-elevation-z0" style="width: 100%">
+        @if (vm$ | async; as vm) {
+          <table
+            mat-table
+            [dataSource]="vm.owners"
+            class="mat-elevation-z0"
+            style="width: 100%"
+            multiTemplateDataRows
+          >
+            <ng-container matColumnDef="expand">
+              <th mat-header-cell *matHeaderCellDef style="width: 44px"></th>
+              <td mat-cell *matCellDef="let o">
+                @if ((vm.waterRightsByOwnerId[o.id]?.length ?? 0) > 0) {
+                  <button
+                    mat-icon-button
+                    type="button"
+                    (click)="toggleExpand(o.id); $event.stopPropagation()"
+                    [attr.aria-label]="isExpanded(0, o) ? 'Colapsar detalle' : 'Expandir detalle'"
+                  >
+                    <mat-icon>{{ isExpanded(0, o) ? 'expand_less' : 'expand_more' }}</mat-icon>
+                  </button>
+                }
+              </td>
+            </ng-container>
+
             <ng-container matColumnDef="fullName">
               <th mat-header-cell *matHeaderCellDef>Nombre</th>
               <td mat-cell *matCellDef="let o">{{ o.fullName }}</td>
@@ -68,6 +92,59 @@ import { CreateOwnerRequest, Owner, OwnersService, UpdateOwnerRequest } from './
               <td mat-cell *matCellDef="let o">{{ o.status }}</td>
             </ng-container>
 
+            <ng-container matColumnDef="waterRights">
+              <th mat-header-cell *matHeaderCellDef>Derechos de agua</th>
+              <td mat-cell *matCellDef="let o">
+                @if ((vm.waterRightsByOwnerId[o.id]?.length ?? 0) > 0) {
+                  <button
+                    mat-button
+                    type="button"
+                    class="linkish"
+                    (click)="toggleExpand(o.id); $event.stopPropagation()"
+                  >
+                    {{ vm.waterRightsByOwnerId[o.id]?.length ?? 0 }}
+                  </button>
+                } @else {
+                  0
+                }
+              </td>
+            </ng-container>
+
+            <ng-container matColumnDef="expandedDetail">
+              <td mat-cell *matCellDef="let o" [attr.colspan]="displayedColumns.length" class="expanded-detail-cell">
+                <div class="expanded-detail">
+                  <div class="expanded-title">
+                    Derechos de agua de <strong>{{ o.fullName }}</strong>
+                  </div>
+
+                  <table mat-table [dataSource]="vm.waterRightsByOwnerId[o.id]" class="detail-table">
+                    <ng-container matColumnDef="rightCode">
+                      <th mat-header-cell *matHeaderCellDef>Código</th>
+                      <td mat-cell *matCellDef="let r">{{ r.rightCode }}</td>
+                    </ng-container>
+
+                    <ng-container matColumnDef="serviceStatus">
+                      <th mat-header-cell *matHeaderCellDef>Estado</th>
+                      <td mat-cell *matCellDef="let r">{{ r.serviceStatus }}</td>
+                    </ng-container>
+
+                    <ng-container matColumnDef="connectionType">
+                      <th mat-header-cell *matHeaderCellDef>Tipo conexión</th>
+                      <td mat-cell *matCellDef="let r">{{ r.connectionType }}</td>
+                    </ng-container>
+
+                    <ng-container matColumnDef="baseTariff">
+                      <th mat-header-cell *matHeaderCellDef>Tarifa base</th>
+                      <td mat-cell *matCellDef="let r">{{ r.baseTariff | currency : 'COP' : 'symbol' : '1.0-0' }}</td>
+                    </ng-container>
+
+                    <tr mat-header-row *matHeaderRowDef="detailColumns"></tr>
+                    <tr mat-row *matRowDef="let row; columns: detailColumns"></tr>
+                  </table>
+                </div>
+              </td>
+            </ng-container>
+
             <ng-container matColumnDef="actions">
               <th mat-header-cell *matHeaderCellDef style="width: 120px">Acciones</th>
               <td mat-cell *matCellDef="let o" class="actions-cell">
@@ -81,7 +158,17 @@ import { CreateOwnerRequest, Owner, OwnersService, UpdateOwnerRequest } from './
             </ng-container>
 
             <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
-            <tr mat-row *matRowDef="let row; columns: displayedColumns"></tr>
+            <tr
+              mat-row
+              *matRowDef="let row; columns: displayedColumns"
+              class="master-row"
+              (click)="onMasterRowClick(row, vm.waterRightsByOwnerId[row.id]?.length ?? 0)"
+            ></tr>
+            <tr
+              mat-row
+              *matRowDef="let row; columns: ['expandedDetail']; when: isExpanded"
+              class="expanded-row"
+            ></tr>
           </table>
         } @else {
           <div style="display: grid; place-items: center; height: 240px">
@@ -95,12 +182,14 @@ import { CreateOwnerRequest, Owner, OwnersService, UpdateOwnerRequest } from './
 })
 export class OwnersPage {
   private readonly ownersService = inject(OwnersService);
+  private readonly waterRightsService = inject(WaterRightsService);
   private readonly snackBar = inject(MatSnackBar);
   private readonly dialog = inject(MatDialog);
 
   private readonly refresh$ = new BehaviorSubject<void>(undefined);
+  private readonly expandedOwnerId = signal<string | null>(null);
 
-  protected readonly owners$ = this.refresh$.pipe(
+  private readonly owners$ = this.refresh$.pipe(
     switchMap(() =>
       this.ownersService.list().pipe(
         catchError((err) => {
@@ -112,10 +201,47 @@ export class OwnersPage {
     ),
     shareReplay({ bufferSize: 1, refCount: true }),
   );
-  protected readonly displayedColumns = ['fullName', 'document', 'status', 'actions'];
+
+  private readonly waterRights$ = this.refresh$.pipe(
+    switchMap(() =>
+      this.waterRightsService.list().pipe(
+        catchError((err) => {
+          const msg = err?.error?.message || 'No se pudo cargar water rights';
+          this.snackBar.open(msg, 'OK', { duration: 4000 });
+          return of([]);
+        }),
+      ),
+    ),
+    shareReplay({ bufferSize: 1, refCount: true }),
+  );
+
+  protected readonly vm$ = combineLatest([this.owners$, this.waterRights$]).pipe(
+    map(([owners, waterRights]) => {
+      const waterRightsByOwnerId: Record<string, WaterRight[]> = {};
+      for (const wr of waterRights) {
+        (waterRightsByOwnerId[wr.ownerId] ??= []).push(wr);
+      }
+      return { owners, waterRightsByOwnerId };
+    }),
+    shareReplay({ bufferSize: 1, refCount: true }),
+  );
+
+  protected readonly displayedColumns = ['fullName', 'document', 'status', 'waterRights', 'actions'];
+  protected readonly detailColumns = ['rightCode', 'serviceStatus', 'connectionType', 'baseTariff'];
+
+  protected isExpanded = (_: number, row: Owner) => row.id === this.expandedOwnerId();
 
   refresh() {
     this.refresh$.next();
+  }
+
+  toggleExpand(ownerId: string) {
+    this.expandedOwnerId.set(this.expandedOwnerId() === ownerId ? null : ownerId);
+  }
+
+  onMasterRowClick(row: Owner, waterRightsCount: number) {
+    if (waterRightsCount <= 0) return;
+    this.toggleExpand(row.id);
   }
 
   openCreate() {

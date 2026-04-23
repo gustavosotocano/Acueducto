@@ -10,7 +10,7 @@ export type WaterRight = {
   propertyId: string;
   waterMeterId: string | null;
   serviceStatus: string;
-  connectionType: string;
+  connectionType: ConnectionType;
   baseTariff: number;
   ownershipStartDate: string;
   ownershipEndDate: string | null;
@@ -18,13 +18,21 @@ export type WaterRight = {
   updatedAt: string;
 };
 
+export type ConnectionType =
+  | 'RESIDENTIAL'
+  | 'COMMERCIAL'
+  | 'AGRICULTURAL'
+  | 'SHARED'
+  | 'METERED'
+  | 'UNMETERED';
+
 export type CreateWaterRightRequest = {
   rightCode: string;
   ownerId: string;
   propertyId: string;
   waterMeterId?: string | null;
   serviceStatus: string;
-  connectionType: string;
+  connectionType: ConnectionType;
   baseTariff: number;
   ownershipStartDate: string; // YYYY-MM-DD
 };
@@ -33,7 +41,7 @@ export type UpdateWaterRightRequest = {
   propertyId: string;
   waterMeterId?: string | null;
   serviceStatus: string;
-  connectionType: string;
+  connectionType: ConnectionType;
   baseTariff: number;
 };
 

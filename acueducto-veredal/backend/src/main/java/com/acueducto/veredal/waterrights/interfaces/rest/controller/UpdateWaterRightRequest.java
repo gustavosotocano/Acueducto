@@ -1,5 +1,6 @@
 package com.acueducto.veredal.waterrights.interfaces.rest.controller;
 
+import com.acueducto.veredal.waterrights.domain.ConnectionType;
 import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -12,7 +13,7 @@ public record UpdateWaterRightRequest(
         @NotNull UUID propertyId,
         UUID waterMeterId,
         @NotBlank @Size(max = 20) String serviceStatus,
-        @NotBlank @Size(max = 30) String connectionType,
+        @NotNull ConnectionType connectionType,
         @NotNull @DecimalMin("0.00") BigDecimal baseTariff
 ) {
 }

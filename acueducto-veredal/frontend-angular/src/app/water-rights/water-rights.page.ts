@@ -16,6 +16,7 @@ import { PropertiesService } from '../properties/properties.service';
 import {
   CreateWaterRightRequest,
   DeactivateWaterRightRequest,
+  ConnectionType,
   UpdateWaterRightRequest,
   WaterRight,
   WaterRightsService,
@@ -300,6 +301,15 @@ export class WaterRightsPage {
   }
 }
 
+const CONNECTION_TYPES: { value: ConnectionType; label: string }[] = [
+  { value: 'RESIDENTIAL', label: 'RESIDENTIAL' },
+  { value: 'COMMERCIAL', label: 'COMMERCIAL' },
+  { value: 'AGRICULTURAL', label: 'AGRICULTURAL' },
+  { value: 'SHARED', label: 'SHARED' },
+  { value: 'METERED', label: 'METERED' },
+  { value: 'UNMETERED', label: 'UNMETERED' },
+];
+
 @Component({
   selector: 'app-water-right-create-dialog',
   imports: [
@@ -354,7 +364,11 @@ export class WaterRightsPage {
 
         <mat-form-field appearance="outline">
           <mat-label>Tipo conexión</mat-label>
-          <input matInput formControlName="connectionType" />
+          <mat-select formControlName="connectionType">
+            @for (ct of connectionTypes; track ct.value) {
+              <mat-option [value]="ct.value">{{ ct.label }}</mat-option>
+            }
+          </mat-select>
         </mat-form-field>
 
         <mat-form-field appearance="outline">
@@ -405,10 +419,12 @@ export class WaterRightCreateDialogComponent {
     propertyId: ['', [Validators.required]],
     waterMeterId: [''],
     serviceStatus: ['ACTIVE', [Validators.required, Validators.maxLength(20)]],
-    connectionType: ['', [Validators.required, Validators.maxLength(30)]],
+    connectionType: ['RESIDENTIAL' as ConnectionType, [Validators.required]],
     baseTariff: [0, [Validators.required, Validators.min(0)]],
     ownershipStartDate: ['', [Validators.required]],
   });
+
+  protected readonly connectionTypes = CONNECTION_TYPES;
 
   constructor() {
     // Back-end expects a rightCode; autogenerate a UUID-like code for convenience.
@@ -430,7 +446,7 @@ export class WaterRightCreateDialogComponent {
       propertyId: v.propertyId.trim(),
       waterMeterId: v.waterMeterId?.trim() || null,
       serviceStatus: v.serviceStatus.trim(),
-      connectionType: v.connectionType.trim(),
+      connectionType: v.connectionType,
       baseTariff: Number(v.baseTariff),
       ownershipStartDate: v.ownershipStartDate,
     };
@@ -473,7 +489,11 @@ export class WaterRightCreateDialogComponent {
 
         <mat-form-field appearance="outline">
           <mat-label>Tipo conexión</mat-label>
-          <input matInput formControlName="connectionType" />
+          <mat-select formControlName="connectionType">
+            @for (ct of connectionTypes; track ct.value) {
+              <mat-option [value]="ct.value">{{ ct.label }}</mat-option>
+            }
+          </mat-select>
         </mat-form-field>
 
         <mat-form-field appearance="outline" class="full">
@@ -516,9 +536,11 @@ export class WaterRightUpdateDialogComponent {
     propertyId: ['', [Validators.required]],
     waterMeterId: [''],
     serviceStatus: ['ACTIVE', [Validators.required, Validators.maxLength(20)]],
-    connectionType: ['', [Validators.required, Validators.maxLength(30)]],
+    connectionType: ['RESIDENTIAL' as ConnectionType, [Validators.required]],
     baseTariff: [0, [Validators.required, Validators.min(0)]],
   });
+
+  protected readonly connectionTypes = CONNECTION_TYPES;
 
   constructor() {
     const r = this.data.right;
@@ -542,7 +564,7 @@ export class WaterRightUpdateDialogComponent {
       propertyId: v.propertyId.trim(),
       waterMeterId: v.waterMeterId?.trim() || null,
       serviceStatus: v.serviceStatus.trim(),
-      connectionType: v.connectionType.trim(),
+      connectionType: v.connectionType,
       baseTariff: Number(v.baseTariff),
     };
     this.dialogRef.close(payload);

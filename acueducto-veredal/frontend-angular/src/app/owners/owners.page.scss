@@ -31,6 +31,52 @@
   height: 51px;
 }
 
+.linkish {
+  min-width: 0;
+  padding: 0 4px;
+  line-height: 1;
+}
+
+.master-row {
+  cursor: pointer;
+}
+
+.master-row:hover {
+  background: color-mix(in srgb, var(--mat-sys-primary) 6%, transparent);
+}
+
+.expanded-row td {
+  padding: 0;
+  border-bottom: none;
+}
+
+.expanded-detail-cell {
+  padding: 0;
+}
+
+.expanded-detail {
+  margin: 8px 0 12px;
+  padding: 12px;
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--mat-sys-surface) 86%, var(--mat-sys-primary) 14%);
+  border: 1px solid color-mix(in srgb, var(--mat-sys-outline-variant) 35%, transparent);
+}
+
+.expanded-title {
+  font: var(--mat-sys-title-small);
+  margin-bottom: 8px;
+}
+
+.detail-table {
+  width: 100%;
+  background: transparent;
+}
+
+.detail-table th,
+.detail-table td {
+  background: transparent;
+}
+
 .card {
   border: 1px solid color-mix(in srgb, var(--mat-sys-outline-variant) 35%, transparent);
 }

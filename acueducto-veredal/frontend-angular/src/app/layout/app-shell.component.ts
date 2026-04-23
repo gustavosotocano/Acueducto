@@ -91,6 +91,7 @@ export class AppShellComponent {
 
   protected readonly nav: NavItem[] = [
     { label: 'Owners', icon: 'person', path: '/owners' },
+    { label: 'Properties', icon: 'home_work', path: '/properties' },
     { label: 'Water rights', icon: 'water_drop', path: '/water-rights' },
     { label: 'Invoices', icon: 'receipt_long', path: '/invoices' },
     { label: 'Payments', icon: 'payments', path: '/payments' },
