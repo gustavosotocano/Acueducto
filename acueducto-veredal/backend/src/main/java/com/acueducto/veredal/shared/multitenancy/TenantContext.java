@@ -18,7 +18,7 @@ public final class TenantContext {
     }
 
     public static String getRequiredTenantId() {
-        return getTenantId().orElseThrow(() -> new IllegalStateException("Tenant id is required"));
+        return getTenantId().orElseThrow(TenantRequiredException::new);
     }
 
     public static void clear() {

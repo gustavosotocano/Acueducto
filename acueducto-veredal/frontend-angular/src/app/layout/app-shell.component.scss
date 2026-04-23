@@ -1,0 +1,76 @@
+.shell {
+  height: 100dvh;
+}
+
+.sidenav {
+  width: 280px;
+  border-right: 1px solid color-mix(in srgb, var(--mat-sys-outline-variant) 30%, transparent);
+}
+
+.brand {
+  display: grid;
+  grid-template-columns: 44px 1fr;
+  gap: 12px;
+  align-items: center;
+  padding: 16px 16px 8px;
+}
+
+.logo {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  display: grid;
+  place-items: center;
+  background: color-mix(in srgb, var(--mat-sys-primary) 16%, transparent);
+  color: var(--mat-sys-primary);
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+.titles {
+  min-width: 0;
+}
+
+.name {
+  font: var(--mat-sys-title-medium);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.subtitle {
+  font: var(--mat-sys-body-small);
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.toolbar {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.toolbar-title {
+  font: var(--mat-sys-title-large);
+  margin-left: 8px;
+}
+
+.spacer {
+  flex: 1;
+}
+
+.page {
+  height: calc(100dvh - 64px);
+  overflow: auto;
+  background: color-mix(in srgb, var(--mat-sys-surface) 92%, var(--mat-sys-primary) 8%);
+}
+
+.page-inner {
+  max-width: var(--app-max-width);
+  margin: 0 auto;
+  padding: 20px;
+}
+
+a.active {
+  background: color-mix(in srgb, var(--mat-sys-primary) 10%, transparent);
+}
+
