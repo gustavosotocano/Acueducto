@@ -157,7 +157,7 @@ export class PropertiesPage {
   }
 
   openDeactivate(p: Property) {
-    const ref = this.dialog.open(ConfirmDialogComponent, {
+    const ref = this.dialog.open(PropertiesConfirmDialogComponent, {
       width: '420px',
       maxWidth: '95vw',
       data: {
@@ -332,7 +332,7 @@ export class PropertyUpdateDialogComponent {
 }
 
 @Component({
-  selector: 'app-confirm-dialog',
+  selector: 'app-properties-confirm-dialog',
   template: `
     <h2 mat-dialog-title>{{ data.title }}</h2>
     <div mat-dialog-content>{{ data.message }}</div>
@@ -343,9 +343,9 @@ export class PropertyUpdateDialogComponent {
   `,
   imports: [MatDialogModule, MatButtonModule],
 })
-export class ConfirmDialogComponent {
+export class PropertiesConfirmDialogComponent {
   protected readonly data = inject<{ title: string; message: string; confirmText?: string }>(MAT_DIALOG_DATA);
-  private readonly dialogRef = inject(MatDialogRef<ConfirmDialogComponent>);
+  private readonly dialogRef = inject(MatDialogRef<PropertiesConfirmDialogComponent>);
   close(v: boolean) {
     this.dialogRef.close(v);
   }

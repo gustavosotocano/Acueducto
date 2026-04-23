@@ -295,7 +295,7 @@ export class OwnersPage {
   }
 
   openDeactivate(owner: Owner) {
-    const ref = this.dialog.open(ConfirmDialogComponent, {
+    const ref = this.dialog.open(OwnersConfirmDialogComponent, {
       width: '420px',
       maxWidth: '95vw',
       data: {
@@ -464,7 +464,7 @@ export class OwnerUpsertDialogComponent {
 }
 
 @Component({
-  selector: 'app-confirm-dialog',
+  selector: 'app-owners-confirm-dialog',
   template: `
     <h2 mat-dialog-title>{{ data.title }}</h2>
     <div mat-dialog-content>{{ data.message }}</div>
@@ -475,9 +475,9 @@ export class OwnerUpsertDialogComponent {
   `,
   imports: [MatDialogModule, MatButtonModule],
 })
-export class ConfirmDialogComponent {
+export class OwnersConfirmDialogComponent {
   protected readonly data = inject<{ title: string; message: string; confirmText?: string }>(MAT_DIALOG_DATA);
-  private readonly dialogRef = inject(MatDialogRef<ConfirmDialogComponent>);
+  private readonly dialogRef = inject(MatDialogRef<OwnersConfirmDialogComponent>);
   close(v: boolean) {
     this.dialogRef.close(v);
   }
