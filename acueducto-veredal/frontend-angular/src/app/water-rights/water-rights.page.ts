@@ -60,7 +60,7 @@ import {
       <div class="filters">
         <mat-form-field appearance="outline">
           <mat-label>Búsqueda</mat-label>
-          <input matInput placeholder="Código / Owner / Property" [formControl]="filters.controls.q" />
+          <input matInput placeholder="Código / Propietario / Predio" [formControl]="filters.controls.q" />
         </mat-form-field>
 
         <mat-form-field appearance="outline">
@@ -88,6 +88,11 @@ import {
         <ng-container matColumnDef="rightCode">
           <th mat-header-cell *matHeaderCellDef>Código</th>
           <td mat-cell *matCellDef="let r">{{ r.rightCode }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="ownerName">
+          <th mat-header-cell *matHeaderCellDef>Propietario</th>
+          <td mat-cell *matCellDef="let r">{{ r.ownerName }}</td>
         </ng-container>
 
         <ng-container matColumnDef="serviceStatus">
@@ -174,6 +179,7 @@ export class WaterRightsPage {
   private readonly fb = inject(FormBuilder);
   private readonly dialog = inject(MatDialog);
   private readonly snackBar = inject(MatSnackBar);
+  private readonly ownersService = inject(OwnersService);
 
   protected readonly filters = this.fb.nonNullable.group({
     q: [''],
@@ -194,21 +200,41 @@ export class WaterRightsPage {
     shareReplay({ bufferSize: 1, refCount: true }),
   );
 
+  private readonly owners$ = this.refresh$.pipe(
+    switchMap(() =>
+      this.ownersService.list().pipe(
+        catchError((err) => {
+          const msg = err?.error?.message || 'No se pudo cargar owners';
+          this.snackBar.open(msg, 'OK', { duration: 4000 });
+          return of([]);
+        }),
+      ),
+    ),
+    shareReplay({ bufferSize: 1, refCount: true }),
+  );
+
   protected readonly vm$ = combineLatest([
     this.items$,
+    this.owners$,
     this.filters.valueChanges.pipe(startWith(this.filters.getRawValue())),
   ]).pipe(
-    map(([items, filters]) => {
+    map(([items, owners, filters]) => {
       const q = (filters.q ?? '').trim().toLowerCase();
       const status = (filters.status ?? '').trim().toLowerCase();
 
+      const ownerNameById = new Map(owners.map((o) => [o.id, o.fullName] as const));
+      const enriched = items.map((i) => ({
+        ...i,
+        ownerName: ownerNameById.get(i.ownerId) ?? i.ownerId,
+      }));
+
       const statusOptions = Array.from(new Set(items.map((i) => i.serviceStatus).filter(Boolean))).sort();
 
-      const filtered = items.filter((i) => {
+      const filtered = enriched.filter((i) => {
         const matchesQ =
           !q ||
           i.rightCode.toLowerCase().includes(q) ||
-          i.ownerId.toLowerCase().includes(q) ||
+          i.ownerName.toLowerCase().includes(q) ||
           i.propertyId.toLowerCase().includes(q);
         const matchesStatus = !status || i.serviceStatus.toLowerCase() === status;
         return matchesQ && matchesStatus;
@@ -219,7 +245,14 @@ export class WaterRightsPage {
     shareReplay({ bufferSize: 1, refCount: true }),
   );
 
-  protected readonly displayedColumns = ['rightCode', 'serviceStatus', 'connectionType', 'baseTariff', 'actions'];
+  protected readonly displayedColumns = [
+    'rightCode',
+    'ownerName',
+    'serviceStatus',
+    'connectionType',
+    'baseTariff',
+    'actions',
+  ];
 
   clearFilters() {
     this.filters.reset({ q: '', status: '' });

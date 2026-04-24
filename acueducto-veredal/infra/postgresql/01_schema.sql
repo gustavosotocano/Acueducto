@@ -41,7 +41,7 @@ begin
 
   select h.service_address, h.village
   into v_service_address, v_village
-  from app.water_right_property_history h
+  from app.water_right_property_history
   where h.tenant_id = p_tenant_id
     and h.water_right_id = p_water_right_id
     and h.end_date is null
