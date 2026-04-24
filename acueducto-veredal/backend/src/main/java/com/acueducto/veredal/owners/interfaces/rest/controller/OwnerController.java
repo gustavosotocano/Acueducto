@@ -35,18 +35,51 @@ public class OwnerController {
         return toResponse(ownerService.findById(id));
     }
 
+    @PutMapping("/{id}")
+    public OwnerResponse update(@PathVariable UUID id, @Valid @RequestBody UpdateOwnerRequest request) {
+        return toResponse(ownerService.update(id, request));
+    }
+
+    @PostMapping("/{id}/deactivate")
+    public OwnerResponse deactivate(@PathVariable UUID id) {
+        return toResponse(ownerService.deactivate(id));
+    }
+
     private OwnerResponse toResponse(OwnerEntity entity) {
+        String fullName = coalesceFullName(entity);
         return new OwnerResponse(
                 entity.getId(),
                 entity.getTenantId(),
                 entity.getDocumentType(),
                 entity.getDocumentNumber(),
-                entity.getFullName(),
+                fullName,
+                entity.getFirstName(),
+                entity.getLastName(),
+                entity.getSecondLastName(),
                 entity.getPhone(),
                 entity.getEmail(),
                 entity.getStatus(),
                 entity.getCreatedAt(),
                 entity.getUpdatedAt()
         );
+    }
+
+    private String coalesceFullName(OwnerEntity entity) {
+        String first = safe(entity.getFirstName());
+        String last = safe(entity.getLastName());
+        String secondLast = safe(entity.getSecondLastName());
+
+        if (!first.isBlank() && !last.isBlank()) {
+            StringBuilder sb = new StringBuilder();
+            sb.append(first).append(" ").append(last);
+            if (!secondLast.isBlank()) sb.append(" ").append(secondLast);
+            return sb.toString();
+        }
+
+        return safe(entity.getFullName());
+    }
+
+    private String safe(String v) {
+        return v == null ? "" : v.trim();
     }
 }

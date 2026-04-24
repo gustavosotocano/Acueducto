@@ -2,10 +2,14 @@ package com.acueducto.veredal.waterrights.infrastructure.persistence.jpa;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
 import jakarta.persistence.Id;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.Table;
 import lombok.Getter;
 import lombok.Setter;
+
+import com.acueducto.veredal.waterrights.domain.ConnectionType;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -41,7 +45,8 @@ public class WaterRightEntity {
     private String serviceStatus;
 
     @Column(name = "connection_type", nullable = false, length = 30)
-    private String connectionType;
+    @Enumerated(EnumType.STRING)
+    private ConnectionType connectionType;
 
     @Column(name = "base_tariff", nullable = false, precision = 14, scale = 2)
     private BigDecimal baseTariff;

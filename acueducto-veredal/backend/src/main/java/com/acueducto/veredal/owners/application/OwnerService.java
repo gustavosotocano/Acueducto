@@ -35,7 +35,10 @@ public class OwnerService {
         entity.setTenantId(tenantId);
         entity.setDocumentType(request.documentType());
         entity.setDocumentNumber(request.documentNumber());
-        entity.setFullName(request.fullName());
+        entity.setFirstName(request.firstName());
+        entity.setLastName(request.lastName());
+        entity.setSecondLastName(request.secondLastName());
+        entity.setFullName(buildFullName(request.firstName(), request.lastName(), request.secondLastName()));
         entity.setPhone(request.phone());
         entity.setEmail(request.email());
         entity.setStatus("ACTIVE");
@@ -57,7 +60,10 @@ public class OwnerService {
 
     public OwnerEntity update(UUID id, UpdateOwnerRequest request) {
         OwnerEntity entity = findById(id);
-        entity.setFullName(request.fullName());
+        entity.setFirstName(request.firstName());
+        entity.setLastName(request.lastName());
+        entity.setSecondLastName(request.secondLastName());
+        entity.setFullName(buildFullName(request.firstName(), request.lastName(), request.secondLastName()));
         entity.setPhone(request.phone());
         entity.setEmail(request.email());
         entity.setUpdatedAt(OffsetDateTime.now());
@@ -69,5 +75,14 @@ public class OwnerService {
         entity.setStatus("INACTIVE");
         entity.setUpdatedAt(OffsetDateTime.now());
         return ownerRepository.save(entity);
+    }
+
+    private String buildFullName(String firstName, String lastName, String secondLastName) {
+        StringBuilder sb = new StringBuilder();
+        sb.append(firstName.trim()).append(" ").append(lastName.trim());
+        if (secondLastName != null && !secondLastName.isBlank()) {
+            sb.append(" ").append(secondLastName.trim());
+        }
+        return sb.toString();
     }
 }

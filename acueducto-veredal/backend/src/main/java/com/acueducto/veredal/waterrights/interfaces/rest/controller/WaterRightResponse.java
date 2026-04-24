@@ -1,5 +1,6 @@
 package com.acueducto.veredal.waterrights.interfaces.rest.controller;
 
+import com.acueducto.veredal.waterrights.domain.ConnectionType;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
@@ -13,7 +14,7 @@ public record WaterRightResponse(
         UUID propertyId,
         UUID waterMeterId,
         String serviceStatus,
-        String connectionType,
+        ConnectionType connectionType,
         BigDecimal baseTariff,
         LocalDate ownershipStartDate,
         LocalDate ownershipEndDate,
