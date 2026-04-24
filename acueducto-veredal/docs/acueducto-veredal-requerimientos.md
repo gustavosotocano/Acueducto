@@ -218,6 +218,48 @@ Las facturas deben manejar estados, por ejemplo:
 ### RF-054. Historial de facturación
 Debe conservarse el historial de emisión y cambios de estado.
 
+### RF-055. Consecutivo de factura (prefijo + secuencial)
+El identificador visible de la factura (p. ej. `invoiceNumber`) debe ser un **consecutivo secuencial** generado por el sistema con **prefijo configurable** (ej: `FAC-000001`).
+
+Reglas:
+- El consecutivo debe generarse **en el backend** al momento de crear/emitir la factura.
+- Debe ser **inmutable** (no editable) una vez asignado.
+- Se debe **evitar dejar huecos** por asignaciones no confirmadas (asignar solo en transacción de creación/confirmación).
+
+### RF-056. No modificación de factura emitida
+Una factura ya emitida y persistida **no se puede editar**. Si existe un error de liquidación, se debe manejar mediante:
+- **Anulación** de la factura (con trazabilidad y motivo), o
+- **Nota crédito** / **Nota débito** según el caso (documentos de ajuste).
+
+### RF-057. Anulación con trazabilidad
+El sistema debe permitir anular una factura manteniendo:
+- fecha/hora de anulación
+- usuario o actor (si aplica)
+- motivo/observación
+- relación con el historial de estado
+
+### RF-058. Nota crédito / Nota débito
+El sistema debe soportar documentos de ajuste asociados a una factura (o al `water_right` cuando aplique) para corregir valores sin modificar la factura original.
+
+### RF-059. Factura requerida para recibo de pago
+Para generar un **recibo/registro de pago**, debe existir una **factura** asociada. En una primera versión el flujo puede ser:
+1) crear factura
+2) registrar pago/recibo
+
+### RF-060. Generación mensual por batch
+El sistema debe permitir generar facturas mensuales por lote (batch) para los `water_right` activos del tenant, creando las facturas del periodo de forma controlada (idealmente idempotente para evitar duplicados).
+
+### RF-065. Tarifas por tipo de conexión con vigencia
+Actualmente el cobro es una **cuota fija**. El sistema debe permitir configurar tarifas diferenciadas por **tipo de conexión** (p. ej. `RESIDENTIAL`, `COMMERCIAL`, etc.), usando el enum de `connectionType` existente en `water_right`.
+
+Además, las tarifas deben manejar **vigencia por fechas**:
+- una fecha **desde** la cual empieza a cobrarse un valor (inicio de vigencia)
+- una fecha **hasta** la cual se cobra el valor vigente (fin de vigencia)
+
+Reglas esperadas:
+- Para un mismo `connectionType` no debe existir más de una tarifa vigente que se solape en el tiempo.
+- La facturación debe usar la tarifa vigente para el periodo/fecha de emisión, según regla definida en implementación (documentar).
+
 ---
 
 ## 3.6 Cartera

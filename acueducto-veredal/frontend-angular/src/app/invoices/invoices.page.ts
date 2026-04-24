@@ -10,9 +10,13 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
 import { MatNativeDateModule } from '@angular/material/core';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { MatSelectModule } from '@angular/material/select';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatTableModule } from '@angular/material/table';
-import { BehaviorSubject, catchError, map, of, shareReplay, startWith, switchMap, tap } from 'rxjs';
+import { BehaviorSubject, catchError, combineLatest, map, of, shareReplay, startWith, switchMap, tap } from 'rxjs';
+import { Owner, OwnersService } from '../owners/owners.service';
+import { PropertiesService, Property } from '../properties/properties.service';
+import { WaterRight, WaterRightsService } from '../water-rights/water-rights.service';
 import { CreateInvoiceRequest, InvoicesService } from './invoices.service';
 
 @Component({
@@ -33,6 +37,7 @@ import { CreateInvoiceRequest, InvoicesService } from './invoices.service';
     MatNativeDateModule,
     MatSnackBarModule,
     MatProgressSpinnerModule,
+    MatSelectModule,
   ],
   template: `
     <div class="header">
@@ -52,8 +57,26 @@ import { CreateInvoiceRequest, InvoicesService } from './invoices.service';
         <mat-card-content>
           <form [formGroup]="form" class="form" (ngSubmit)="submit()">
             <mat-form-field appearance="outline">
-              <mat-label>Water right ID</mat-label>
-              <input matInput formControlName="waterRightId" placeholder="UUID" />
+              <mat-label>Propietario</mat-label>
+              <mat-select formControlName="ownerId">
+                @for (o of ownerOptions$ | async; track o.id) {
+                  <mat-option [value]="o.id">{{ o.fullName }}</mat-option>
+                }
+              </mat-select>
+            </mat-form-field>
+
+            <mat-form-field appearance="outline">
+              <mat-label>Water right</mat-label>
+              <mat-select formControlName="waterRightId">
+                @for (wr of waterRightOptions$ | async; track wr.id) {
+                  <mat-option [value]="wr.id">{{ wr.label }}</mat-option>
+                }
+              </mat-select>
+            </mat-form-field>
+
+            <mat-form-field appearance="outline">
+              <mat-label>Código water right</mat-label>
+              <input matInput formControlName="waterRightCode" readonly />
             </mat-form-field>
 
             <mat-form-field appearance="outline">
@@ -164,6 +187,9 @@ export class InvoicesPage {
   private readonly invoicesService = inject(InvoicesService);
   private readonly fb = inject(FormBuilder);
   private readonly snackBar = inject(MatSnackBar);
+  private readonly waterRightsService = inject(WaterRightsService);
+  private readonly ownersService = inject(OwnersService);
+  private readonly propertiesService = inject(PropertiesService);
 
   private readonly refresh$ = new BehaviorSubject<void>(undefined);
   private readonly savingSubject = new BehaviorSubject<boolean>(false);
@@ -178,7 +204,9 @@ export class InvoicesPage {
   );
 
   protected readonly form = this.fb.nonNullable.group({
+    ownerId: ['', [Validators.required]],
     waterRightId: ['', [Validators.required]],
+    waterRightCode: [{ value: '', disabled: false }],
     invoiceNumber: ['', [Validators.required]],
     periodStart: [new Date(), [Validators.required]],
     periodEnd: [new Date(), [Validators.required]],
@@ -187,6 +215,78 @@ export class InvoicesPage {
     totalAmount: [25000, [Validators.required, Validators.min(0)]],
     notes: [''],
   });
+
+  private readonly waterRights$ = this.waterRightsService.list().pipe(
+    catchError((err) => {
+      const msg = err?.error?.message || 'No se pudo cargar water rights';
+      this.snackBar.open(msg, 'OK', { duration: 4000 });
+      return of([] as WaterRight[]);
+    }),
+    shareReplay({ bufferSize: 1, refCount: true }),
+  );
+
+  private readonly owners$ = this.ownersService.list().pipe(
+    catchError((err) => {
+      const msg = err?.error?.message || 'No se pudo cargar owners';
+      this.snackBar.open(msg, 'OK', { duration: 4000 });
+      return of([] as Owner[]);
+    }),
+    shareReplay({ bufferSize: 1, refCount: true }),
+  );
+
+  private readonly properties$ = this.propertiesService.list().pipe(
+    catchError((err) => {
+      const msg = err?.error?.message || 'No se pudo cargar properties';
+      this.snackBar.open(msg, 'OK', { duration: 4000 });
+      return of([] as Property[]);
+    }),
+    shareReplay({ bufferSize: 1, refCount: true }),
+  );
+
+  private readonly ownerId$ = this.form.controls.ownerId.valueChanges.pipe(
+    startWith(this.form.controls.ownerId.value),
+  );
+  private readonly waterRightId$ = this.form.controls.waterRightId.valueChanges.pipe(
+    startWith(this.form.controls.waterRightId.value),
+  );
+
+  protected readonly ownerOptions$ = this.owners$.pipe(
+    map((owners) => owners.slice().sort((a, b) => a.fullName.localeCompare(b.fullName))),
+    startWith([] as Owner[]),
+    shareReplay({ bufferSize: 1, refCount: true }),
+  );
+
+  protected readonly waterRightOptions$ = combineLatest([this.waterRights$, this.properties$, this.ownerId$]).pipe(
+    map(([waterRights, properties, ownerId]) => {
+      const propertyById = new Map(properties.map((p) => [p.id, p] as const));
+      const filtered: WaterRight[] = ownerId ? waterRights.filter((wr) => wr.ownerId === ownerId) : [];
+      return filtered
+        .map((wr) => {
+          const p = propertyById.get(wr.propertyId);
+          const label = p?.propertyName || p?.propertyCode || wr.propertyId || wr.id;
+          return { id: wr.id, label };
+        })
+        .sort((a, b) => a.label.localeCompare(b.label));
+    }),
+    tap((opts) => {
+      // If current selection is no longer valid, clear it.
+      const currentId = this.form.controls.waterRightId.value;
+      if (!currentId) return;
+      if (!opts.some((o) => o.id === currentId)) {
+        this.form.controls.waterRightId.setValue('');
+        this.form.controls.waterRightCode.setValue('');
+      }
+    }),
+    startWith([] as { id: string; label: string }[]),
+    shareReplay({ bufferSize: 1, refCount: true }),
+  );
+
+  constructor() {
+    // Copy selected waterRightId into the read-only field.
+    this.waterRightId$
+      .pipe(tap((id) => this.form.controls.waterRightCode.setValue(id, { emitEvent: false })))
+      .subscribe();
+  }
 
   submit() {
     if (this.form.invalid || this.savingSubject.value) return;
@@ -221,7 +321,9 @@ export class InvoicesPage {
 
   reset() {
     this.form.reset({
+      ownerId: '',
       waterRightId: '',
+      waterRightCode: '',
       invoiceNumber: '',
       periodStart: new Date(),
       periodEnd: new Date(),
