@@ -39,6 +39,12 @@ body {
 
 :root {
   --app-max-width: 1200px;
+  --app-bg: #f5f7fb;
+  --app-sidenav-bg: #0f172a;
+  --app-sidenav-fg: rgba(255, 255, 255, 0.88);
+  --app-sidenav-muted: rgba(255, 255, 255, 0.58);
+  --app-sidenav-active: rgba(59, 130, 246, 0.18);
+  --app-topbar-bg: #ffffff;
 }
 
 * {
