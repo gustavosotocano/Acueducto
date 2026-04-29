@@ -16,7 +16,7 @@ public record CreateInvoiceRequest(
         @NotNull LocalDate periodEnd,
         @NotNull LocalDate issueDate,
         @NotNull LocalDate dueDate,
-        @NotNull @DecimalMin("0.00") BigDecimal totalAmount,
+        @DecimalMin("0.00") BigDecimal totalAmount,
         @Size(max = 2000) String notes
 ) {
 }

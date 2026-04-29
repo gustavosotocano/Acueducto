@@ -4,11 +4,14 @@ import com.acueducto.veredal.invoices.infrastructure.persistence.jpa.InvoiceEnti
 import com.acueducto.veredal.invoices.infrastructure.persistence.jpa.InvoiceRepository;
 import com.acueducto.veredal.invoices.interfaces.rest.controller.CreateInvoiceRequest;
 import com.acueducto.veredal.shared.multitenancy.TenantContext;
+import com.acueducto.veredal.tariffs.application.ConnectionTariffService;
+import com.acueducto.veredal.tariffs.infrastructure.persistence.jpa.ConnectionTariffEntity;
 import com.acueducto.veredal.waterrights.infrastructure.persistence.jpa.WaterRightEntity;
 import com.acueducto.veredal.waterrights.infrastructure.persistence.jpa.WaterRightRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.util.List;
@@ -20,10 +23,16 @@ public class InvoiceService {
 
     private final InvoiceRepository invoiceRepository;
     private final WaterRightRepository waterRightRepository;
+    private final ConnectionTariffService connectionTariffService;
 
-    public InvoiceService(InvoiceRepository invoiceRepository, WaterRightRepository waterRightRepository) {
+    public InvoiceService(
+            InvoiceRepository invoiceRepository,
+            WaterRightRepository waterRightRepository,
+            ConnectionTariffService connectionTariffService
+    ) {
         this.invoiceRepository = invoiceRepository;
         this.waterRightRepository = waterRightRepository;
+        this.connectionTariffService = connectionTariffService;
     }
 
     public InvoiceEntity create(CreateInvoiceRequest request) {
@@ -32,6 +41,8 @@ public class InvoiceService {
                 .orElseThrow(() -> new IllegalArgumentException("Water right not found"));
 
         validateDates(request.periodStart(), request.periodEnd(), request.issueDate(), request.dueDate());
+
+        BigDecimal computedAmount = computeTotalAmount(waterRight, request.issueDate(), request.totalAmount());
 
         OffsetDateTime now = OffsetDateTime.now();
         InvoiceEntity invoice = new InvoiceEntity();
@@ -45,7 +56,7 @@ public class InvoiceService {
         invoice.setPeriodEnd(request.periodEnd());
         invoice.setIssueDate(request.issueDate());
         invoice.setDueDate(request.dueDate());
-        invoice.setTotalAmount(request.totalAmount());
+        invoice.setTotalAmount(computedAmount);
         invoice.setNotes(request.notes());
         invoice.setCreatedAt(now);
         invoice.setUpdatedAt(now);
@@ -87,6 +98,19 @@ public class InvoiceService {
         }
         if (dueDate.isBefore(issueDate)) {
             throw new IllegalArgumentException("Due date cannot be before issue date");
+        }
+    }
+
+    private BigDecimal computeTotalAmount(WaterRightEntity waterRight, LocalDate issueDate, BigDecimal requested) {
+        // Preferred: use configured tariff by connection type and validity.
+        try {
+            ConnectionTariffEntity applicable = connectionTariffService.findApplicable(waterRight.getConnectionType(), issueDate);
+            return applicable.getAmount();
+        } catch (IllegalArgumentException ignored) {
+            // Transitional fallback: keep system usable when tariffs haven't been configured yet.
+            // If caller provided a total, accept it; otherwise use the water_right baseTariff.
+            if (requested != null) return requested;
+            return waterRight.getBaseTariff();
         }
     }
 }
