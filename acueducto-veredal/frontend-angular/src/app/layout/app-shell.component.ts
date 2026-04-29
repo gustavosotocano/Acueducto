@@ -59,7 +59,7 @@ type NavItem = {
       </mat-sidenav>
 
       <mat-sidenav-content class="content">
-        <mat-toolbar class="toolbar" color="primary">
+        <mat-toolbar class="toolbar">
           @if (!(isDesktop$ | async)) {
             <button mat-icon-button (click)="toggleMobileNav()">
               <mat-icon>menu</mat-icon>

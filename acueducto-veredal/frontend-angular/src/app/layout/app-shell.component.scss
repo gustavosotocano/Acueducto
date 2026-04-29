@@ -4,7 +4,17 @@
 
 .sidenav {
   width: 280px;
-  border-right: 1px solid color-mix(in srgb, var(--mat-sys-outline-variant) 30%, transparent);
+  border-right: 1px solid rgba(255, 255, 255, 0.06);
+  background: var(--app-sidenav-bg);
+  color: var(--app-sidenav-fg);
+}
+
+.sidenav :global(.mat-mdc-list-item) {
+  color: var(--app-sidenav-fg);
+}
+
+.sidenav :global(.mat-mdc-list-item .mat-icon) {
+  color: var(--app-sidenav-muted);
 }
 
 .brand {
@@ -21,8 +31,8 @@
   border-radius: 12px;
   display: grid;
   place-items: center;
-  background: color-mix(in srgb, var(--mat-sys-primary) 16%, transparent);
-  color: var(--mat-sys-primary);
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--app-sidenav-fg);
   font-weight: 700;
   letter-spacing: 0.02em;
 }
@@ -40,13 +50,15 @@
 
 .subtitle {
   font: var(--mat-sys-body-small);
-  color: var(--mat-sys-on-surface-variant);
+  color: var(--app-sidenav-muted);
 }
 
 .toolbar {
   position: sticky;
   top: 0;
   z-index: 10;
+  background: var(--app-topbar-bg);
+  border-bottom: 1px solid color-mix(in srgb, var(--mat-sys-outline-variant) 35%, transparent);
 }
 
 .toolbar-title {
@@ -61,7 +73,7 @@
 .page {
   height: calc(100dvh - 64px);
   overflow: auto;
-  background: color-mix(in srgb, var(--mat-sys-surface) 92%, var(--mat-sys-primary) 8%);
+  background: var(--app-bg);
 }
 
 .page-inner {
@@ -71,6 +83,15 @@
 }
 
 a.active {
-  background: color-mix(in srgb, var(--mat-sys-primary) 10%, transparent);
+  background: var(--app-sidenav-active);
+}
+
+.sidenav a {
+  border-radius: 10px;
+  margin: 2px 10px;
+}
+
+.sidenav a:hover {
+  background: rgba(255, 255, 255, 0.06);
 }
 
