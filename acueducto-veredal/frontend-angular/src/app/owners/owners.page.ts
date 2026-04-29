@@ -12,6 +12,7 @@ import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatTableModule } from '@angular/material/table';
 import { BehaviorSubject, catchError, combineLatest, map, of, shareReplay, switchMap, tap } from 'rxjs';
 import { WaterRight, WaterRightsService } from '../water-rights/water-rights.service';
+import { PageHeaderComponent } from '../shared/ui/page-header.component';
 import { CreateOwnerRequest, Owner, OwnersService, UpdateOwnerRequest } from './owners.service';
 
 @Component({
@@ -29,16 +30,11 @@ import { CreateOwnerRequest, Owner, OwnersService, UpdateOwnerRequest } from './
     MatButtonModule,
     MatIconModule,
     MatSnackBarModule,
+    PageHeaderComponent,
   ],
   template: `
-    <div class="header">
-      <div>
-        <h2 class="header-title">Owners</h2>
-        <p class="header-subtitle">
-          Crear propietarios y consultar listado del tenant.
-        </p>
-      </div>
-      <div class="header-actions">
+    <app-page-header title="Owners" subtitle="Crear propietarios y consultar listado del tenant.">
+      <div actions>
         <button mat-icon-button type="button" (click)="openCreate()" aria-label="Agregar owner">
           <mat-icon>add</mat-icon>
         </button>
@@ -46,7 +42,7 @@ import { CreateOwnerRequest, Owner, OwnersService, UpdateOwnerRequest } from './
           <mat-icon>refresh</mat-icon>
         </button>
       </div>
-    </div>
+    </app-page-header>
 
     <mat-card class="card">
       <mat-card-header>
