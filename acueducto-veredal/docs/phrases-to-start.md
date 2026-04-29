@@ -41,7 +41,7 @@ Este documento define frases cortas para disparar procesos con el agente, sin de
 
 - **QA: valida el PR #<n>**
   - Ejecuta smoke + pruebas funcionales + regresión (según módulo)
-  - Si pasa: deja aprobación
+  - Si pasa: deja **QA PASS** (Approve si es posible; si eres el autor del PR, deja comentario)
   - Si falla: reporta bugs (1 issue por bug)
 
 - **QA: valida la historia RF-<xxx> (PR #<n>)**

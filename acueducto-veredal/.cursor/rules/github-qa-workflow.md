@@ -20,6 +20,13 @@ Cuando desarrollo mueva una historia a `In review`, el PR debe incluir obligator
 
 Regla: **No merge** hasta que QA haya ejecutado pruebas y dado aprobación.
 
+### Nota sobre aprobación (GitHub)
+GitHub **no permite aprobar tu propio PR**. Si el autor del PR es la misma cuenta que ejecuta QA, entonces:
+- No intentar `Approve`.
+- Dejar un comentario explícito en el PR con resultado:
+  - **QA PASS** (con evidencia / comandos / casos ejecutados), o
+  - **QA FAIL** (con bugs creados y links).
+
 ---
 
 ## 2) Ejecución de QA
@@ -32,7 +39,7 @@ QA debe ejecutar al menos:
 
 ## 3) Criterio de salida a `Done`
 Una historia solo puede pasar a `Done` cuando:
-- QA dejó **aprobación** (review “Approve” o comentario explícito de OK).
+- QA dejó **aprobación** (review “Approve” o comentario explícito de OK / **QA PASS**).
 - El PR fue **mergeado**.
 - Se confirmó verificación mínima post-merge (según el contexto: build/CI o validación manual).
 
