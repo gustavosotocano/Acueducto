@@ -2,12 +2,17 @@ import { BreakpointObserver } from '@angular/cdk/layout';
 import { AsyncPipe } from '@angular/common';
 import { Component, ViewChild, inject } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
+import { MatDividerModule } from '@angular/material/divider';
 import { MatIconModule } from '@angular/material/icon';
 import { MatListModule } from '@angular/material/list';
+import { MatMenuModule } from '@angular/material/menu';
 import { MatSidenav, MatSidenavModule } from '@angular/material/sidenav';
 import { MatToolbarModule } from '@angular/material/toolbar';
 import { NavigationEnd, Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { filter, map, shareReplay, startWith } from 'rxjs';
+import { TenantStore } from '../core/tenant/tenant.store';
+import { TenantsService } from '../tenants/tenants.service';
+import { catchError, of } from 'rxjs';
 
 type NavItem = {
   label: string;
@@ -27,6 +32,8 @@ type NavItem = {
     MatIconModule,
     MatButtonModule,
     MatListModule,
+    MatMenuModule,
+    MatDividerModule,
   ],
   template: `
     <mat-sidenav-container class="shell">
@@ -69,10 +76,28 @@ type NavItem = {
           <span class="toolbar-title">{{ currentTitle$ | async }}</span>
           <span class="spacer"></span>
 
-          <button mat-button disabled>
+          <button mat-button [matMenuTriggerFor]="tenantMenu">
             <mat-icon>apartment</mat-icon>
-            <span>Tenant</span>
+            <span>{{ activeTenantLabel() }}</span>
           </button>
+          <mat-menu #tenantMenu="matMenu">
+            <button mat-menu-item [routerLink]="'/tenants'">
+              <mat-icon>settings</mat-icon>
+              <span>Administrar tenants</span>
+            </button>
+            <mat-divider />
+            @for (t of tenants$ | async; track t.id) {
+              <button mat-menu-item (click)="selectTenant(t.id)">
+                <mat-icon>{{ tenantId() === t.id ? 'check' : 'apartment' }}</mat-icon>
+                <span>{{ t.tenantName }}</span>
+              </button>
+            }
+            <mat-divider />
+            <button mat-menu-item (click)="clearTenant()">
+              <mat-icon>close</mat-icon>
+              <span>Limpiar selección</span>
+            </button>
+          </mat-menu>
         </mat-toolbar>
 
         <div class="page">
@@ -88,8 +113,11 @@ type NavItem = {
 export class AppShellComponent {
   private readonly breakpointObserver = inject(BreakpointObserver);
   private readonly router = inject(Router);
+  private readonly tenantStore = inject(TenantStore);
+  private readonly tenantsService = inject(TenantsService);
 
   protected readonly nav: NavItem[] = [
+    { label: 'Tenants', icon: 'apartment', path: '/tenants' },
     { label: 'Owners', icon: 'person', path: '/owners' },
     { label: 'Properties', icon: 'home_work', path: '/properties' },
     { label: 'Water rights', icon: 'water_drop', path: '/water-rights' },
@@ -113,6 +141,27 @@ export class AppShellComponent {
     }),
     shareReplay({ bufferSize: 1, refCount: true }),
   );
+
+  protected readonly tenants$ = this.tenantsService.list().pipe(
+    catchError(() => of([])),
+    shareReplay({ bufferSize: 1, refCount: true }),
+  );
+
+  protected readonly tenantId = this.tenantStore.tenantId;
+
+  protected activeTenantLabel() {
+    const id = this.tenantId();
+    if (!id) return 'Seleccionar tenant';
+    return id;
+  }
+
+  protected selectTenant(id: string) {
+    this.tenantStore.setTenantId(id);
+  }
+
+  protected clearTenant() {
+    this.tenantStore.clear();
+  }
 
   @ViewChild(MatSidenav)
   private readonly sidenav?: MatSidenav;
