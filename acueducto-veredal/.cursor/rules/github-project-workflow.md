@@ -21,9 +21,11 @@ Cuando el usuario diga “tomemos la RF-XXX y desarrollemosla” (o “tomemos l
    - Mover a **`Done`**.
 
 ### Calidad
-- Antes de pasar a `In review`:
+- **`In review` es etapa de QA / Calidad**: a partir de ahí el área de calidad ejecuta pruebas y valida criterios de aceptación.
+- Antes de pasar a `In review` (responsabilidad de desarrollo):
   - correr tests/lints/build relevantes del backend y/o frontend según el alcance
-  - documentar en el PR el **test plan** (qué se probó)
+  - documentar en el PR el **test plan** (qué se probó) y **pasos para QA**
+- No hacer **merge** hasta tener **aprobación de QA** (y revisión técnica si aplica).
 
 ### Revisión y comentarios
 - Responder comentarios del PR y hacer commits de ajuste en la misma rama.
