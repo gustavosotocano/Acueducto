@@ -8,6 +8,9 @@ import java.util.UUID;
 
 public interface WaterRightRepository extends JpaRepository<WaterRightEntity, UUID> {
     List<WaterRightEntity> findAllByTenantIdOrderByRightCodeAsc(String tenantId);
+
+    List<WaterRightEntity> findAllByTenantIdAndServiceStatusOrderByRightCodeAsc(String tenantId, String serviceStatus);
+
     Optional<WaterRightEntity> findByIdAndTenantId(UUID id, String tenantId);
     boolean existsByTenantIdAndRightCode(String tenantId, String rightCode);
 }

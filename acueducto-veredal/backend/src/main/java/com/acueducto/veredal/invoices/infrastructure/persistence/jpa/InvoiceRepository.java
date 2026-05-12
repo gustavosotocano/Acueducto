@@ -26,5 +26,13 @@ public interface InvoiceRepository extends JpaRepository<InvoiceEntity, UUID> {
             LocalDate from,
             LocalDate to
     );
+
+    boolean existsByTenantIdAndWaterRightIdAndPeriodStartAndPeriodEndAndStatusNot(
+            String tenantId,
+            UUID waterRightId,
+            LocalDate periodStart,
+            LocalDate periodEnd,
+            String status
+    );
 }
 
