@@ -13,6 +13,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 @Service
@@ -75,11 +76,16 @@ public class ConnectionTariffService {
 
     @Transactional(readOnly = true)
     public ConnectionTariffEntity findApplicable(ConnectionType connectionType, LocalDate onDate) {
+        return findApplicableOptional(connectionType, onDate)
+                .orElseThrow(() -> new IllegalArgumentException("No applicable tariff found for connection type"));
+    }
+
+    @Transactional(readOnly = true)
+    public Optional<ConnectionTariffEntity> findApplicableOptional(ConnectionType connectionType, LocalDate onDate) {
         String tenantId = TenantContext.getRequiredTenantId();
         return repository.findApplicable(tenantId, connectionType, onDate, PageRequest.of(0, 1))
                 .stream()
-                .findFirst()
-                .orElseThrow(() -> new IllegalArgumentException("No applicable tariff found for connection type"));
+                .findFirst();
     }
 
     private void validateValidity(LocalDate from, LocalDate to) {
