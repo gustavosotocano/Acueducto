@@ -2,10 +2,13 @@ package com.acueducto.veredal.tariffs.interfaces.rest.controller;
 
 import com.acueducto.veredal.tariffs.application.ConnectionTariffService;
 import com.acueducto.veredal.tariffs.infrastructure.persistence.jpa.ConnectionTariffEntity;
+import com.acueducto.veredal.waterrights.domain.ConnectionType;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
 
@@ -28,6 +31,21 @@ public class ConnectionTariffController {
     @GetMapping
     public List<ConnectionTariffResponse> findAll() {
         return service.findAll().stream().map(this::toResponse).toList();
+    }
+
+    /**
+     * Resolves the tariff row used for billing on {@code onDate} (same rule as invoice total: latest {@code validFrom}
+     * among rows where validFrom &lt;= onDate &lt;= coalesce(validTo, infinity)).
+     */
+    @GetMapping("/applicable")
+    public ResponseEntity<ConnectionTariffResponse> applicable(
+            @RequestParam ConnectionType connectionType,
+            @RequestParam LocalDate onDate
+    ) {
+        return service.findApplicableOptional(connectionType, onDate)
+                .map(this::toResponse)
+                .map(ResponseEntity::ok)
+                .orElseGet(() -> ResponseEntity.notFound().build());
     }
 
     @GetMapping("/{id}")

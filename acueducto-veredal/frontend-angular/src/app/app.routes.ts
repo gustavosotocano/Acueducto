@@ -22,6 +22,11 @@ export const routes: Routes = [
     title: 'Water rights',
   },
   {
+    path: 'connection-tariffs',
+    loadComponent: () => import('./connection-tariffs/connection-tariffs.page').then((m) => m.ConnectionTariffsPage),
+    title: 'Tarifas',
+  },
+  {
     path: 'invoices',
     loadComponent: () => import('./invoices/invoices.page').then((m) => m.InvoicesPage),
     title: 'Invoices',

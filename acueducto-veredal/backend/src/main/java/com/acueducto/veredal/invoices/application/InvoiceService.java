@@ -123,6 +123,7 @@ public class InvoiceService {
     }
 
     private BigDecimal computeTotalAmount(WaterRightEntity waterRight, LocalDate issueDate, BigDecimal requested) {
+        // RF-065: amount from connection_tariff valid on issueDate; tie-break: latest validFrom (see repository order).
         String tenantId = TenantContext.getRequiredTenantId();
         var applicable = connectionTariffRepository
                 .findApplicable(tenantId, waterRight.getConnectionType(), issueDate, PageRequest.of(0, 1))

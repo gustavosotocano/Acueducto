@@ -260,6 +260,8 @@ Reglas esperadas:
 - Para un mismo `connectionType` no debe existir más de una tarifa vigente que se solape en el tiempo.
 - La facturación debe usar la tarifa vigente para el periodo/fecha de emisión, según regla definida en implementación (documentar).
 
+**Regla implementada (facturación / RF-065):** al calcular el total de una factura (creación manual o lote mensual), se consulta la tarifa del tenant cuyo `connectionType` coincide con el del `water_right`, con `validFrom <= issueDate` y (`validTo` nulo o `validTo >= issueDate`). Si hay varias filas candidatas, se toma la de **`validFrom` más reciente** (desempate por orden descendente de `validFrom`). Si no hay tarifa aplicable, se usa el `totalAmount` enviado en la petición cuando exista; si no, el `baseTariff` del derecho.
+
 ---
 
 ## 3.6 Cartera

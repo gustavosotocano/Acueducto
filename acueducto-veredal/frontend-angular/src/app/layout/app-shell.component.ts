@@ -121,6 +121,7 @@ export class AppShellComponent {
     { label: 'Owners', icon: 'person', path: '/owners' },
     { label: 'Properties', icon: 'home_work', path: '/properties' },
     { label: 'Water rights', icon: 'water_drop', path: '/water-rights' },
+    { label: 'Tarifas', icon: 'request_quote', path: '/connection-tariffs' },
     { label: 'Invoices', icon: 'receipt_long', path: '/invoices' },
     { label: 'Payments', icon: 'payments', path: '/payments' },
     { label: 'Portfolio', icon: 'account_balance', path: '/portfolio' },

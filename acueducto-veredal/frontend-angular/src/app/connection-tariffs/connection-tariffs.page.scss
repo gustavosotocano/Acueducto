@@ -1,0 +1,17 @@
+.form {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  align-items: start;
+  padding-top: 8px;
+}
+
+.full {
+  grid-column: 1 / -1;
+}
+
+@media (max-width: 560px) {
+  .form {
+    grid-template-columns: 1fr;
+  }
+}

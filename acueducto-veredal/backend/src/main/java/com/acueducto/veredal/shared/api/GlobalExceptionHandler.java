@@ -3,6 +3,7 @@ package com.acueducto.veredal.shared.api;
 import com.acueducto.veredal.shared.multitenancy.TenantRequiredException;
 import com.acueducto.veredal.shared.multitenancy.TenantNotFoundException;
 import jakarta.servlet.http.HttpServletRequest;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -46,5 +47,15 @@ public class GlobalExceptionHandler {
                 .map(fieldError -> fieldError.getField() + " " + fieldError.getDefaultMessage())
                 .orElse("Validation error");
         return new ApiError(OffsetDateTime.now(), 400, "Bad Request", message, request.getRequestURI());
+    }
+
+    @ExceptionHandler(DataIntegrityViolationException.class)
+    @ResponseStatus(HttpStatus.CONFLICT)
+    public ApiError handleDataIntegrity(DataIntegrityViolationException ex, HttpServletRequest request) {
+        String root = ex.getMostSpecificCause() != null ? ex.getMostSpecificCause().getMessage() : ex.getMessage();
+        String message = root != null && root.contains("ex_connection_tariff_no_overlap")
+                ? "Tariff period overlaps an existing tariff for this connection type"
+                : "Data integrity violation";
+        return new ApiError(OffsetDateTime.now(), 409, "Conflict", message, request.getRequestURI());
     }
 }
