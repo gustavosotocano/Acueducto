@@ -4,10 +4,10 @@ import com.acueducto.veredal.invoices.infrastructure.persistence.jpa.InvoiceEnti
 import com.acueducto.veredal.invoices.infrastructure.persistence.jpa.InvoiceRepository;
 import com.acueducto.veredal.invoices.interfaces.rest.controller.CreateInvoiceRequest;
 import com.acueducto.veredal.shared.multitenancy.TenantContext;
-import com.acueducto.veredal.tariffs.application.ConnectionTariffService;
-import com.acueducto.veredal.tariffs.infrastructure.persistence.jpa.ConnectionTariffEntity;
+import com.acueducto.veredal.tariffs.infrastructure.persistence.jpa.ConnectionTariffRepository;
 import com.acueducto.veredal.waterrights.infrastructure.persistence.jpa.WaterRightEntity;
 import com.acueducto.veredal.waterrights.infrastructure.persistence.jpa.WaterRightRepository;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -23,16 +23,16 @@ public class InvoiceService {
 
     private final InvoiceRepository invoiceRepository;
     private final WaterRightRepository waterRightRepository;
-    private final ConnectionTariffService connectionTariffService;
+    private final ConnectionTariffRepository connectionTariffRepository;
 
     public InvoiceService(
             InvoiceRepository invoiceRepository,
             WaterRightRepository waterRightRepository,
-            ConnectionTariffService connectionTariffService
+            ConnectionTariffRepository connectionTariffRepository
     ) {
         this.invoiceRepository = invoiceRepository;
         this.waterRightRepository = waterRightRepository;
-        this.connectionTariffService = connectionTariffService;
+        this.connectionTariffRepository = connectionTariffRepository;
     }
 
     public InvoiceEntity create(CreateInvoiceRequest request) {
@@ -61,6 +61,27 @@ public class InvoiceService {
         invoice.setCreatedAt(now);
         invoice.setUpdatedAt(now);
         return invoiceRepository.save(invoice);
+    }
+
+    public InvoiceEntity createForBatch(
+            UUID waterRightId,
+            String invoiceNumber,
+            LocalDate periodStart,
+            LocalDate periodEnd,
+            LocalDate issueDate,
+            LocalDate dueDate,
+            String notes
+    ) {
+        return create(new CreateInvoiceRequest(
+                waterRightId,
+                invoiceNumber,
+                periodStart,
+                periodEnd,
+                issueDate,
+                dueDate,
+                null,
+                notes
+        ));
     }
 
     @Transactional(readOnly = true)
@@ -102,16 +123,18 @@ public class InvoiceService {
     }
 
     private BigDecimal computeTotalAmount(WaterRightEntity waterRight, LocalDate issueDate, BigDecimal requested) {
-        // Preferred: use configured tariff by connection type and validity.
-        try {
-            ConnectionTariffEntity applicable = connectionTariffService.findApplicable(waterRight.getConnectionType(), issueDate);
-            return applicable.getAmount();
-        } catch (IllegalArgumentException ignored) {
-            // Transitional fallback: keep system usable when tariffs haven't been configured yet.
-            // If caller provided a total, accept it; otherwise use the water_right baseTariff.
-            if (requested != null) return requested;
-            return waterRight.getBaseTariff();
+        String tenantId = TenantContext.getRequiredTenantId();
+        var applicable = connectionTariffRepository
+                .findApplicable(tenantId, waterRight.getConnectionType(), issueDate, PageRequest.of(0, 1))
+                .stream()
+                .findFirst();
+        if (applicable.isPresent()) {
+            return applicable.get().getAmount();
         }
+        if (requested != null) {
+            return requested;
+        }
+        return waterRight.getBaseTariff();
     }
 }
 

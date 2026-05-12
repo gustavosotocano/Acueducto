@@ -2,6 +2,7 @@ package com.acueducto.veredal.invoices.interfaces.rest.controller;
 
 import com.acueducto.veredal.invoices.application.InvoiceService;
 import com.acueducto.veredal.invoices.application.InvoiceStatusService;
+import com.acueducto.veredal.invoices.application.MonthlyInvoiceBatchService;
 import com.acueducto.veredal.invoices.infrastructure.persistence.jpa.InvoiceEntity;
 import com.acueducto.veredal.invoices.infrastructure.persistence.jpa.history.InvoiceStatusHistoryEntity;
 import jakarta.validation.Valid;
@@ -18,16 +19,27 @@ public class InvoiceController {
 
     private final InvoiceService invoiceService;
     private final InvoiceStatusService invoiceStatusService;
+    private final MonthlyInvoiceBatchService monthlyInvoiceBatchService;
 
-    public InvoiceController(InvoiceService invoiceService, InvoiceStatusService invoiceStatusService) {
+    public InvoiceController(
+            InvoiceService invoiceService,
+            InvoiceStatusService invoiceStatusService,
+            MonthlyInvoiceBatchService monthlyInvoiceBatchService
+    ) {
         this.invoiceService = invoiceService;
         this.invoiceStatusService = invoiceStatusService;
+        this.monthlyInvoiceBatchService = monthlyInvoiceBatchService;
     }
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     public InvoiceResponse create(@Valid @RequestBody CreateInvoiceRequest request) {
         return toResponse(invoiceService.create(request));
+    }
+
+    @PostMapping("/batch/monthly")
+    public BatchMonthlyInvoiceResponse batchMonthly(@Valid @RequestBody BatchMonthlyInvoiceRequest request) {
+        return monthlyInvoiceBatchService.run(request);
     }
 
     @GetMapping

@@ -264,7 +264,7 @@ Reglas esperadas:
 
 ## 3.6 Cartera
 
-### RF-060. Gestión de cartera por water_right
+### RF-064. Gestión de cartera por water_right
 La cartera debe calcularse y consultarse a nivel de `water_right`.
 
 ### RF-061. Saldo pendiente
