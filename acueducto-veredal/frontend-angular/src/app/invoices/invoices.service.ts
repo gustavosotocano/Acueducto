@@ -30,6 +30,32 @@ export type CreateInvoiceRequest = {
   notes?: string | null;
 };
 
+/** RF-060: POST /invoices/batch/monthly */
+export type BatchMonthlyInvoiceRequest = {
+  billingYear: number;
+  billingMonth: number;
+  issueDate?: string | null;
+  dueDate?: string | null;
+};
+
+export type BatchMonthlySkip = {
+  waterRightId: string;
+  reason: string;
+};
+
+export type BatchMonthlyInvoiceResponse = {
+  billingYear: number;
+  billingMonth: number;
+  periodStart: string;
+  periodEnd: string;
+  issueDate: string;
+  dueDate: string;
+  createdCount: number;
+  skippedCount: number;
+  createdInvoiceIds: string[];
+  skipped: BatchMonthlySkip[];
+};
+
 @Injectable({ providedIn: 'root' })
 export class InvoicesService {
   private readonly http = inject(HttpClient);
@@ -45,6 +71,13 @@ export class InvoicesService {
 
   create(payload: CreateInvoiceRequest) {
     return this.http.post<Invoice>(`${environment.apiBaseUrl}/invoices`, payload);
+  }
+
+  runMonthlyBatch(payload: BatchMonthlyInvoiceRequest) {
+    return this.http.post<BatchMonthlyInvoiceResponse>(
+      `${environment.apiBaseUrl}/invoices/batch/monthly`,
+      payload,
+    );
   }
 }
 
