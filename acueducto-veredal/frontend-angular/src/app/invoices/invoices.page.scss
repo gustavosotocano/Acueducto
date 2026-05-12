@@ -15,6 +15,21 @@
   border: 1px solid color-mix(in srgb, var(--mat-sys-outline-variant) 35%, transparent);
 }
 
+.batch-card {
+  margin-bottom: 16px;
+}
+
+.batch-form .hint {
+  grid-column: 1 / -1;
+  margin: 0;
+  font-size: 0.875rem;
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.result-skips {
+  margin-top: 16px;
+}
+
 .form {
   display: grid;
   grid-template-columns: 1fr 1fr;

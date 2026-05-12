@@ -17,7 +17,12 @@ import { BehaviorSubject, catchError, combineLatest, map, of, shareReplay, start
 import { Owner, OwnersService } from '../owners/owners.service';
 import { PropertiesService, Property } from '../properties/properties.service';
 import { WaterRight, WaterRightsService } from '../water-rights/water-rights.service';
-import { CreateInvoiceRequest, InvoicesService } from './invoices.service';
+import {
+  BatchMonthlyInvoiceRequest,
+  BatchMonthlyInvoiceResponse,
+  CreateInvoiceRequest,
+  InvoicesService,
+} from './invoices.service';
 
 @Component({
   selector: 'app-invoices-page',
@@ -44,10 +49,96 @@ import { CreateInvoiceRequest, InvoicesService } from './invoices.service';
       <div>
         <h2 style="margin: 0">Invoices</h2>
         <p style="margin: 4px 0 0; color: var(--mat-sys-on-surface-variant)">
-          Crear factura manual y consultar listado.
+          Factura manual, lote mensual (RF-060) y listado.
         </p>
       </div>
     </div>
+
+    <mat-card class="card batch-card">
+      <mat-card-header>
+        <mat-card-title>Facturación mensual por lote</mat-card-title>
+        <mat-card-subtitle>
+          Genera facturas del mes para todos los derechos de agua en estado activo del tenant. Las omitidas no duplican
+          periodo ya facturado.
+        </mat-card-subtitle>
+      </mat-card-header>
+      <mat-card-content>
+        <form [formGroup]="batchForm" class="form batch-form" (ngSubmit)="submitBatch()">
+          <mat-form-field appearance="outline">
+            <mat-label>Año de cobro</mat-label>
+            <input matInput type="number" formControlName="billingYear" />
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>Mes de cobro</mat-label>
+            <mat-select formControlName="billingMonth">
+              @for (m of months; track m) {
+                <mat-option [value]="m">{{ monthLabel(m) }}</mat-option>
+              }
+            </mat-select>
+          </mat-form-field>
+
+          <p class="hint">
+            Fechas opcionales: si las deja vacías, el backend usa fin de mes como emisión y +15 días para vencimiento.
+          </p>
+
+          <mat-form-field appearance="outline">
+            <mat-label>Fecha emisión (opcional)</mat-label>
+            <input matInput [matDatepicker]="bIssue" formControlName="issueDate" />
+            <mat-datepicker-toggle matIconSuffix [for]="bIssue" />
+            <mat-datepicker #bIssue />
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>Vence (opcional)</mat-label>
+            <input matInput [matDatepicker]="bDue" formControlName="dueDate" />
+            <mat-datepicker-toggle matIconSuffix [for]="bDue" />
+            <mat-datepicker #bDue />
+          </mat-form-field>
+
+          <div class="actions">
+            <button
+              mat-flat-button
+              color="primary"
+              type="submit"
+              [disabled]="batchForm.invalid || (batchSaving$ | async)"
+            >
+              @if (batchSaving$ | async) {
+                <mat-spinner diameter="18" />
+              } @else {
+                <mat-icon>calendar_month</mat-icon>
+              }
+              <span>Ejecutar lote mensual</span>
+            </button>
+          </div>
+        </form>
+
+        @if (lastBatch) {
+          <div class="result-skips">
+            <mat-divider />
+            <p style="margin: 12px 0 8px">
+              <strong>Resultado:</strong> creadas {{ lastBatch.createdCount }}, omitidas {{ lastBatch.skippedCount }}.
+              Periodo {{ lastBatch.periodStart }} → {{ lastBatch.periodEnd }}, emisión {{ lastBatch.issueDate }}, vence
+              {{ lastBatch.dueDate }}.
+            </p>
+            @if (lastBatch.skipped.length > 0) {
+              <table mat-table [dataSource]="lastBatch.skipped" class="mat-elevation-z0" style="width: 100%">
+                <ng-container matColumnDef="waterRightId">
+                  <th mat-header-cell *matHeaderCellDef>Water right</th>
+                  <td mat-cell *matCellDef="let s">{{ s.waterRightId }}</td>
+                </ng-container>
+                <ng-container matColumnDef="reason">
+                  <th mat-header-cell *matHeaderCellDef>Motivo</th>
+                  <td mat-cell *matCellDef="let s">{{ s.reason }}</td>
+                </ng-container>
+                <tr mat-header-row *matHeaderRowDef="skipColumns"></tr>
+                <tr mat-row *matRowDef="let row; columns: skipColumns"></tr>
+              </table>
+            }
+          </div>
+        }
+      </mat-card-content>
+    </mat-card>
 
     <div class="grid">
       <mat-card class="card">
@@ -191,9 +282,26 @@ export class InvoicesPage {
   private readonly ownersService = inject(OwnersService);
   private readonly propertiesService = inject(PropertiesService);
 
+  protected readonly months = Array.from({ length: 12 }, (_, i) => i + 1);
+  protected readonly skipColumns = ['waterRightId', 'reason'];
+  protected lastBatch: BatchMonthlyInvoiceResponse | null = null;
+
   private readonly refresh$ = new BehaviorSubject<void>(undefined);
   private readonly savingSubject = new BehaviorSubject<boolean>(false);
   protected readonly saving$ = this.savingSubject.asObservable();
+
+  private readonly batchSavingSubject = new BehaviorSubject<boolean>(false);
+  protected readonly batchSaving$ = this.batchSavingSubject.asObservable();
+
+  protected readonly batchForm = this.fb.group({
+    billingYear: [
+      new Date().getFullYear(),
+      [Validators.required, Validators.min(2000), Validators.max(3000)],
+    ],
+    billingMonth: [new Date().getMonth() + 1, [Validators.required, Validators.min(1), Validators.max(12)]],
+    issueDate: [null as Date | null],
+    dueDate: [null as Date | null],
+  });
 
   protected readonly columns = ['invoiceNumber', 'status', 'issueDate', 'dueDate', 'totalAmount'];
 
@@ -315,6 +423,58 @@ export class InvoicesPage {
           return of(null);
         }),
         tap(() => this.savingSubject.next(false)),
+      )
+      .subscribe();
+  }
+
+  protected monthLabel(m: number): string {
+    const names = [
+      'Enero',
+      'Febrero',
+      'Marzo',
+      'Abril',
+      'Mayo',
+      'Junio',
+      'Julio',
+      'Agosto',
+      'Septiembre',
+      'Octubre',
+      'Noviembre',
+      'Diciembre',
+    ];
+    return names[m - 1] ?? String(m);
+  }
+
+  submitBatch() {
+    if (this.batchForm.invalid || this.batchSavingSubject.value) return;
+    const v = this.batchForm.getRawValue();
+    const payload: BatchMonthlyInvoiceRequest = {
+      billingYear: Number(v.billingYear),
+      billingMonth: Number(v.billingMonth),
+    };
+    if (v.issueDate) {
+      payload.issueDate = toIsoDate(v.issueDate);
+    }
+    if (v.dueDate) {
+      payload.dueDate = toIsoDate(v.dueDate);
+    }
+
+    this.lastBatch = null;
+    this.batchSavingSubject.next(true);
+    this.invoicesService
+      .runMonthlyBatch(payload)
+      .pipe(
+        tap((res) => {
+          this.lastBatch = res;
+          this.snackBar.open(`Lote: ${res.createdCount} creadas, ${res.skippedCount} omitidas`, 'OK', { duration: 5000 });
+        }),
+        tap(() => this.refresh$.next()),
+        catchError((err) => {
+          const msg = err?.error?.message || 'Error en lote mensual';
+          this.snackBar.open(msg, 'OK', { duration: 6000 });
+          return of(null);
+        }),
+        tap(() => this.batchSavingSubject.next(false)),
       )
       .subscribe();
   }
