@@ -44,6 +44,15 @@ public class PaymentService {
             throw new IllegalStateException("Cannot register payments for a cancelled invoice");
         }
 
+        BigDecimal paidBefore = paymentRepository.sumAmountByTenantIdAndInvoiceId(tenantId, invoice.getId());
+        BigDecimal outstanding = invoice.getTotalAmount().subtract(paidBefore);
+        if (outstanding.compareTo(BigDecimal.ZERO) <= 0) {
+            throw new IllegalStateException("Invoice has no outstanding balance");
+        }
+        if (request.amount().compareTo(outstanding) > 0) {
+            throw new IllegalArgumentException("Payment amount exceeds invoice outstanding balance");
+        }
+
         OffsetDateTime now = OffsetDateTime.now();
         PaymentEntity payment = new PaymentEntity();
         payment.setId(UUID.randomUUID());
