@@ -13,8 +13,9 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSelectModule } from '@angular/material/select';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatTableModule } from '@angular/material/table';
-import { BehaviorSubject, catchError, of, shareReplay, switchMap, tap } from 'rxjs';
-import { CreatePaymentRequest, PaymentsService } from './payments.service';
+import { BehaviorSubject, catchError, combineLatest, map, of, shareReplay, switchMap, take, tap } from 'rxjs';
+import { Invoice, InvoicesService } from '../invoices/invoices.service';
+import { CreatePaymentRequest, Payment, PaymentsService } from './payments.service';
 
 @Component({
   selector: 'app-payments-page',
@@ -41,7 +42,7 @@ import { CreatePaymentRequest, PaymentsService } from './payments.service';
       <div>
         <h2 style="margin: 0">Payments</h2>
         <p style="margin: 4px 0 0; color: var(--mat-sys-on-surface-variant)">
-          Registrar pagos y consultar historial.
+          RF-059: primero cree la factura y luego registre el pago asociado.
         </p>
       </div>
     </div>
@@ -54,8 +55,24 @@ import { CreatePaymentRequest, PaymentsService } from './payments.service';
         <mat-card-content>
           <form [formGroup]="form" class="form" (ngSubmit)="submit()">
             <mat-form-field appearance="outline" class="full">
-              <mat-label>Invoice ID</mat-label>
-              <input matInput formControlName="invoiceId" placeholder="UUID" />
+              <mat-label>Factura</mat-label>
+              <mat-select formControlName="invoiceId" (selectionChange)="onInvoiceSelected($event.value)">
+                @if (payableInvoices$ | async; as invoices) {
+                  @if (invoices.length === 0) {
+                    <mat-option disabled>No hay facturas disponibles. Cree una en Invoices.</mat-option>
+                  } @else {
+                    @for (invoice of invoices; track invoice.id) {
+                      <mat-option [value]="invoice.id">
+                        {{ invoice.invoiceNumber }} · {{ invoice.status }} ·
+                        {{ invoice.totalAmount | currency : 'COP' : 'symbol' : '1.0-0' }}
+                      </mat-option>
+                    }
+                  }
+                } @else {
+                  <mat-option disabled>Cargando facturas…</mat-option>
+                }
+              </mat-select>
+              <mat-hint>El recibo de pago queda ligado a la factura seleccionada.</mat-hint>
             </mat-form-field>
 
             <mat-form-field appearance="outline">
@@ -127,9 +144,9 @@ import { CreatePaymentRequest, PaymentsService } from './payments.service';
                 <td mat-cell *matCellDef="let r">{{ r.method }}</td>
               </ng-container>
 
-              <ng-container matColumnDef="invoiceId">
-                <th mat-header-cell *matHeaderCellDef>Invoice</th>
-                <td mat-cell *matCellDef="let r" class="mono">{{ r.invoiceId }}</td>
+              <ng-container matColumnDef="invoiceNumber">
+                <th mat-header-cell *matHeaderCellDef>Factura</th>
+                <td mat-cell *matCellDef="let r">{{ r.invoiceNumber }}</td>
               </ng-container>
 
               <tr mat-header-row *matHeaderRowDef="columns"></tr>
@@ -148,6 +165,7 @@ import { CreatePaymentRequest, PaymentsService } from './payments.service';
 })
 export class PaymentsPage {
   private readonly paymentsService = inject(PaymentsService);
+  private readonly invoicesService = inject(InvoicesService);
   private readonly fb = inject(FormBuilder);
   private readonly snackBar = inject(MatSnackBar);
 
@@ -155,11 +173,24 @@ export class PaymentsPage {
   private readonly savingSubject = new BehaviorSubject<boolean>(false);
   protected readonly saving$ = this.savingSubject.asObservable();
 
-  protected readonly columns = ['paymentDate', 'amount', 'method', 'invoiceId'];
+  protected readonly columns = ['paymentDate', 'amount', 'method', 'invoiceNumber'];
+
+  protected readonly allInvoices$ = this.invoicesService.list().pipe(
+    catchError(() => of([] as Invoice[])),
+    shareReplay({ bufferSize: 1, refCount: true }),
+  );
+
+  protected readonly payableInvoices$ = this.allInvoices$.pipe(
+    map((invoices) => invoices.filter((invoice) => invoice.status !== 'CANCELLED')),
+  );
 
   protected readonly payments$ = this.refresh$.pipe(
-    switchMap(() => this.paymentsService.list()),
-    catchError(() => of([])),
+    switchMap(() =>
+      combineLatest([this.paymentsService.list(), this.allInvoices$]).pipe(
+        map(([payments, invoices]) => attachInvoiceNumbers(payments, invoices)),
+      ),
+    ),
+    catchError(() => of([] as PaymentRow[])),
     shareReplay({ bufferSize: 1, refCount: true }),
   );
 
@@ -171,6 +202,20 @@ export class PaymentsPage {
     reference: [''],
     notes: [''],
   });
+
+  onInvoiceSelected(invoiceId: string) {
+    this.payableInvoices$
+      .pipe(
+        take(1),
+        map((invoices) => invoices.find((invoice) => invoice.id === invoiceId)),
+        tap((invoice) => {
+          if (invoice) {
+            this.form.patchValue({ amount: invoice.totalAmount });
+          }
+        }),
+      )
+      .subscribe();
+  }
 
   submit() {
     if (this.form.invalid || this.savingSubject.value) return;
@@ -218,5 +263,15 @@ function toIsoDate(d: Date): string {
   const mm = String(d.getMonth() + 1).padStart(2, '0');
   const dd = String(d.getDate()).padStart(2, '0');
   return `${yyyy}-${mm}-${dd}`;
+}
+
+type PaymentRow = Payment & { invoiceNumber: string };
+
+function attachInvoiceNumbers(payments: Payment[], invoices: Invoice[]): PaymentRow[] {
+  const invoiceNumbers = new Map(invoices.map((invoice) => [invoice.id, invoice.invoiceNumber]));
+  return payments.map((payment) => ({
+    ...payment,
+    invoiceNumber: invoiceNumbers.get(payment.invoiceId) ?? payment.invoiceId,
+  }));
 }
 
