@@ -106,6 +106,67 @@ class PaymentInvoiceRequiredIT extends IntegrationTestBase {
                 .andExpect(jsonPath("$.method", is("TRANSFER")));
     }
 
+    @Test
+    void partialPaymentLeavesOutstandingBalance() throws Exception {
+        String tenant = "tenant_rf059_partial";
+        createTenant(tenant);
+
+        UUID ownerId = createOwner(tenant);
+        UUID propertyId = createProperty(tenant, ownerId);
+        UUID waterRightId = createWaterRight(tenant, ownerId, propertyId, "WR-RF059-PARTIAL");
+        UUID invoiceId = createInvoice(tenant, waterRightId, "FAC-RF059-PARTIAL");
+
+        registerPayment(tenant, invoiceId, "2026-04-28", "10000.00", "CASH");
+        registerPayment(tenant, invoiceId, "2026-04-29", "15000.00", "TRANSFER");
+    }
+
+    @Test
+    void paymentRejectsAmountAboveOutstandingBalance() throws Exception {
+        String tenant = "tenant_rf059_overpay";
+        createTenant(tenant);
+
+        UUID ownerId = createOwner(tenant);
+        UUID propertyId = createProperty(tenant, ownerId);
+        UUID waterRightId = createWaterRight(tenant, ownerId, propertyId, "WR-RF059-OVER");
+        UUID invoiceId = createInvoice(tenant, waterRightId, "FAC-RF059-OVER");
+
+        registerPayment(tenant, invoiceId, "2026-04-28", "10000.00", "CASH");
+
+        String payload = """
+                {
+                  "invoiceId":"%s",
+                  "paymentDate":"2026-04-29",
+                  "amount":20000.00,
+                  "method":"TRANSFER"
+                }
+                """.formatted(invoiceId);
+
+        mockMvc.perform(post("/api/v1/payments")
+                        .header("X-Tenant-Id", tenant)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(payload))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message", is("Payment amount exceeds invoice outstanding balance")));
+    }
+
+    private void registerPayment(String tenant, UUID invoiceId, String paymentDate, String amount, String method)
+            throws Exception {
+        String payload = """
+                {
+                  "invoiceId":"%s",
+                  "paymentDate":"%s",
+                  "amount":%s,
+                  "method":"%s"
+                }
+                """.formatted(invoiceId, paymentDate, amount, method);
+
+        mockMvc.perform(post("/api/v1/payments")
+                        .header("X-Tenant-Id", tenant)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(payload))
+                .andExpect(status().isCreated());
+    }
+
     private void createTenant(String id) throws Exception {
         String body = objectMapper.writeValueAsString(new CreateTenantRequest(
                 id,

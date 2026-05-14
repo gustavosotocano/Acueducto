@@ -13,8 +13,20 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSelectModule } from '@angular/material/select';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatTableModule } from '@angular/material/table';
-import { BehaviorSubject, catchError, combineLatest, map, of, shareReplay, switchMap, take, tap } from 'rxjs';
+import {
+  BehaviorSubject,
+  catchError,
+  combineLatest,
+  map,
+  of,
+  shareReplay,
+  startWith,
+  switchMap,
+  take,
+  tap,
+} from 'rxjs';
 import { Invoice, InvoicesService } from '../invoices/invoices.service';
+import { Owner, OwnersService } from '../owners/owners.service';
 import { CreatePaymentRequest, Payment, PaymentsService } from './payments.service';
 
 @Component({
@@ -42,7 +54,7 @@ import { CreatePaymentRequest, Payment, PaymentsService } from './payments.servi
       <div>
         <h2 style="margin: 0">Payments</h2>
         <p style="margin: 4px 0 0; color: var(--mat-sys-on-surface-variant)">
-          RF-059: primero cree la factura y luego registre el pago asociado.
+          RF-059: filtre por propietario, revise abonos y registre solo el saldo pendiente.
         </p>
       </div>
     </div>
@@ -55,16 +67,30 @@ import { CreatePaymentRequest, Payment, PaymentsService } from './payments.servi
         <mat-card-content>
           <form [formGroup]="form" class="form" (ngSubmit)="submit()">
             <mat-form-field appearance="outline" class="full">
+              <mat-label>Propietario</mat-label>
+              <mat-select formControlName="ownerId">
+                @for (owner of ownerOptions$ | async; track owner.id) {
+                  <mat-option [value]="owner.id">{{ owner.fullName }}</mat-option>
+                }
+              </mat-select>
+              <mat-hint>Primero elija el propietario para ver sus facturas con saldo.</mat-hint>
+            </mat-form-field>
+
+            <mat-form-field appearance="outline" class="full">
               <mat-label>Factura</mat-label>
               <mat-select formControlName="invoiceId" (selectionChange)="onInvoiceSelected($event.value)">
-                @if (payableInvoices$ | async; as invoices) {
+                @if (!form.controls.ownerId.value) {
+                  <mat-option disabled>Seleccione un propietario.</mat-option>
+                } @else if (payableInvoices$ | async; as invoices) {
                   @if (invoices.length === 0) {
-                    <mat-option disabled>No hay facturas disponibles. Cree una en Invoices.</mat-option>
+                    <mat-option disabled>No hay facturas con saldo para este propietario.</mat-option>
                   } @else {
                     @for (invoice of invoices; track invoice.id) {
                       <mat-option [value]="invoice.id">
-                        {{ invoice.invoiceNumber }} · {{ invoice.status }} ·
-                        {{ invoice.totalAmount | currency : 'COP' : 'symbol' : '1.0-0' }}
+                        {{ invoice.invoiceNumber }} · total
+                        {{ invoice.totalAmount | currency : 'COP' : 'symbol' : '1.0-0' }} · abonado
+                        {{ invoice.paidAmount | currency : 'COP' : 'symbol' : '1.0-0' }} · saldo
+                        {{ invoice.balanceAmount | currency : 'COP' : 'symbol' : '1.0-0' }}
                       </mat-option>
                     }
                   }
@@ -74,6 +100,14 @@ import { CreatePaymentRequest, Payment, PaymentsService } from './payments.servi
               </mat-select>
               <mat-hint>El recibo de pago queda ligado a la factura seleccionada.</mat-hint>
             </mat-form-field>
+
+            @if (selectedInvoice$ | async; as selectedInvoice) {
+              <p class="balance-summary full">
+                Total {{ selectedInvoice.totalAmount | currency : 'COP' : 'symbol' : '1.0-0' }} · abonado
+                {{ selectedInvoice.paidAmount | currency : 'COP' : 'symbol' : '1.0-0' }} · saldo
+                {{ selectedInvoice.balanceAmount | currency : 'COP' : 'symbol' : '1.0-0' }}
+              </p>
+            }
 
             <mat-form-field appearance="outline">
               <mat-label>Fecha</mat-label>
@@ -85,6 +119,7 @@ import { CreatePaymentRequest, Payment, PaymentsService } from './payments.servi
             <mat-form-field appearance="outline">
               <mat-label>Monto</mat-label>
               <input matInput type="number" formControlName="amount" />
+              <mat-hint>Se sugiere el saldo pendiente de la factura.</mat-hint>
             </mat-form-field>
 
             <mat-form-field appearance="outline">
@@ -128,30 +163,36 @@ import { CreatePaymentRequest, Payment, PaymentsService } from './payments.servi
         </mat-card-header>
         <mat-card-content>
           @if (payments$ | async; as payments) {
-            <table mat-table [dataSource]="payments" class="mat-elevation-z0" style="width: 100%">
-              <ng-container matColumnDef="paymentDate">
-                <th mat-header-cell *matHeaderCellDef>Fecha</th>
-                <td mat-cell *matCellDef="let r">{{ r.paymentDate | date : 'yyyy-MM-dd' }}</td>
-              </ng-container>
+            @if (!form.controls.ownerId.value) {
+              <p class="empty-hint">Seleccione un propietario para ver sus pagos.</p>
+            } @else if (payments.length === 0) {
+              <p class="empty-hint">No hay pagos registrados para este propietario.</p>
+            } @else {
+              <table mat-table [dataSource]="payments" class="mat-elevation-z0" style="width: 100%">
+                <ng-container matColumnDef="paymentDate">
+                  <th mat-header-cell *matHeaderCellDef>Fecha</th>
+                  <td mat-cell *matCellDef="let r">{{ r.paymentDate | date : 'yyyy-MM-dd' }}</td>
+                </ng-container>
 
-              <ng-container matColumnDef="amount">
-                <th mat-header-cell *matHeaderCellDef>Monto</th>
-                <td mat-cell *matCellDef="let r">{{ r.amount | currency : 'COP' : 'symbol' : '1.0-0' }}</td>
-              </ng-container>
+                <ng-container matColumnDef="amount">
+                  <th mat-header-cell *matHeaderCellDef>Monto</th>
+                  <td mat-cell *matCellDef="let r">{{ r.amount | currency : 'COP' : 'symbol' : '1.0-0' }}</td>
+                </ng-container>
 
-              <ng-container matColumnDef="method">
-                <th mat-header-cell *matHeaderCellDef>Método</th>
-                <td mat-cell *matCellDef="let r">{{ r.method }}</td>
-              </ng-container>
+                <ng-container matColumnDef="method">
+                  <th mat-header-cell *matHeaderCellDef>Método</th>
+                  <td mat-cell *matCellDef="let r">{{ r.method }}</td>
+                </ng-container>
 
-              <ng-container matColumnDef="invoiceNumber">
-                <th mat-header-cell *matHeaderCellDef>Factura</th>
-                <td mat-cell *matCellDef="let r">{{ r.invoiceNumber }}</td>
-              </ng-container>
+                <ng-container matColumnDef="invoiceNumber">
+                  <th mat-header-cell *matHeaderCellDef>Factura</th>
+                  <td mat-cell *matCellDef="let r">{{ r.invoiceNumber }}</td>
+                </ng-container>
 
-              <tr mat-header-row *matHeaderRowDef="columns"></tr>
-              <tr mat-row *matRowDef="let row; columns: columns"></tr>
-            </table>
+                <tr mat-header-row *matHeaderRowDef="columns"></tr>
+                <tr mat-row *matRowDef="let row; columns: columns"></tr>
+              </table>
+            }
           } @else {
             <div style="display: grid; place-items: center; height: 200px">
               <mat-spinner diameter="28" />
@@ -166,6 +207,7 @@ import { CreatePaymentRequest, Payment, PaymentsService } from './payments.servi
 export class PaymentsPage {
   private readonly paymentsService = inject(PaymentsService);
   private readonly invoicesService = inject(InvoicesService);
+  private readonly ownersService = inject(OwnersService);
   private readonly fb = inject(FormBuilder);
   private readonly snackBar = inject(MatSnackBar);
 
@@ -175,33 +217,70 @@ export class PaymentsPage {
 
   protected readonly columns = ['paymentDate', 'amount', 'method', 'invoiceNumber'];
 
-  protected readonly allInvoices$ = this.invoicesService.list().pipe(
-    catchError(() => of([] as Invoice[])),
-    shareReplay({ bufferSize: 1, refCount: true }),
-  );
-
-  protected readonly payableInvoices$ = this.allInvoices$.pipe(
-    map((invoices) => invoices.filter((invoice) => invoice.status !== 'CANCELLED')),
-  );
-
-  protected readonly payments$ = this.refresh$.pipe(
-    switchMap(() =>
-      combineLatest([this.paymentsService.list(), this.allInvoices$]).pipe(
-        map(([payments, invoices]) => attachInvoiceNumbers(payments, invoices)),
-      ),
-    ),
-    catchError(() => of([] as PaymentRow[])),
-    shareReplay({ bufferSize: 1, refCount: true }),
-  );
-
   protected readonly form = this.fb.nonNullable.group({
+    ownerId: ['', [Validators.required]],
     invoiceId: ['', [Validators.required]],
     paymentDate: [new Date(), [Validators.required]],
-    amount: [25000, [Validators.required, Validators.min(0.01)]],
+    amount: [0, [Validators.required, Validators.min(0.01)]],
     method: ['CASH', [Validators.required]],
     reference: [''],
     notes: [''],
   });
+
+  private readonly ownerId$ = this.form.controls.ownerId.valueChanges.pipe(
+    startWith(this.form.controls.ownerId.value),
+    tap(() => this.form.patchValue({ invoiceId: '', amount: 0 })),
+  );
+
+  private readonly invoiceId$ = this.form.controls.invoiceId.valueChanges.pipe(
+    startWith(this.form.controls.invoiceId.value),
+  );
+
+  private readonly owners$ = this.ownersService.list().pipe(
+    catchError((err) => {
+      const msg = err?.error?.message || 'No se pudo cargar propietarios';
+      this.snackBar.open(msg, 'OK', { duration: 4000 });
+      return of([] as Owner[]);
+    }),
+    shareReplay({ bufferSize: 1, refCount: true }),
+  );
+
+  protected readonly ownerOptions$ = this.owners$.pipe(
+    map((owners) => owners.slice().sort((a, b) => a.fullName.localeCompare(b.fullName))),
+    startWith([] as Owner[]),
+    shareReplay({ bufferSize: 1, refCount: true }),
+  );
+
+  protected readonly payableInvoices$ = combineLatest([this.ownerId$, this.refresh$]).pipe(
+    switchMap(([ownerId]) => {
+      if (!ownerId) {
+        return of([] as PayableInvoice[]);
+      }
+      return combineLatest([
+        this.invoicesService.list({ ownerId }),
+        this.paymentsService.list({ ownerId }),
+      ]).pipe(map(([invoices, payments]) => buildPayableInvoices(invoices, payments)));
+    }),
+    shareReplay({ bufferSize: 1, refCount: true }),
+  );
+
+  protected readonly selectedInvoice$ = combineLatest([this.payableInvoices$, this.invoiceId$]).pipe(
+    map(([invoices, invoiceId]) => invoices.find((invoice) => invoice.id === invoiceId) ?? null),
+  );
+
+  protected readonly payments$ = combineLatest([this.ownerId$, this.refresh$]).pipe(
+    switchMap(([ownerId]) => {
+      if (!ownerId) {
+        return of([] as PaymentRow[]);
+      }
+      return combineLatest([
+        this.paymentsService.list({ ownerId }),
+        this.invoicesService.list({ ownerId }),
+      ]).pipe(map(([payments, invoices]) => attachInvoiceNumbers(payments, invoices)));
+    }),
+    catchError(() => of([] as PaymentRow[])),
+    shareReplay({ bufferSize: 1, refCount: true }),
+  );
 
   onInvoiceSelected(invoiceId: string) {
     this.payableInvoices$
@@ -210,7 +289,7 @@ export class PaymentsPage {
         map((invoices) => invoices.find((invoice) => invoice.id === invoiceId)),
         tap((invoice) => {
           if (invoice) {
-            this.form.patchValue({ amount: invoice.totalAmount });
+            this.form.patchValue({ amount: invoice.balanceAmount });
           }
         }),
       )
@@ -248,9 +327,10 @@ export class PaymentsPage {
 
   reset() {
     this.form.reset({
+      ownerId: '',
       invoiceId: '',
       paymentDate: new Date(),
-      amount: 25000,
+      amount: 0,
       method: 'CASH',
       reference: '',
       notes: '',
@@ -265,7 +345,34 @@ function toIsoDate(d: Date): string {
   return `${yyyy}-${mm}-${dd}`;
 }
 
+type PayableInvoice = Invoice & {
+  paidAmount: number;
+  balanceAmount: number;
+};
+
 type PaymentRow = Payment & { invoiceNumber: string };
+
+function buildPayableInvoices(invoices: Invoice[], payments: Payment[]): PayableInvoice[] {
+  const paidByInvoice = sumPaymentsByInvoice(payments);
+  return invoices
+    .filter((invoice) => invoice.status !== 'CANCELLED')
+    .map((invoice) => {
+      const paidAmount = paidByInvoice.get(invoice.id) ?? 0;
+      const balanceAmount = Math.max(0, roundMoney(invoice.totalAmount - paidAmount));
+      return { ...invoice, paidAmount, balanceAmount };
+    })
+    .filter((invoice) => invoice.balanceAmount > 0)
+    .sort((a, b) => a.invoiceNumber.localeCompare(b.invoiceNumber));
+}
+
+function sumPaymentsByInvoice(payments: Payment[]): Map<string, number> {
+  const paidByInvoice = new Map<string, number>();
+  for (const payment of payments) {
+    const current = paidByInvoice.get(payment.invoiceId) ?? 0;
+    paidByInvoice.set(payment.invoiceId, roundMoney(current + payment.amount));
+  }
+  return paidByInvoice;
+}
 
 function attachInvoiceNumbers(payments: Payment[], invoices: Invoice[]): PaymentRow[] {
   const invoiceNumbers = new Map(invoices.map((invoice) => [invoice.id, invoice.invoiceNumber]));
@@ -275,3 +382,6 @@ function attachInvoiceNumbers(payments: Payment[], invoices: Invoice[]): Payment
   }));
 }
 
+function roundMoney(value: number): number {
+  return Math.round(value * 100) / 100;
+}
