@@ -1,5 +1,6 @@
 import { AsyncPipe, CurrencyPipe, DatePipe } from '@angular/common';
-import { Component, inject } from '@angular/core';
+import { Component, DestroyRef, inject } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
@@ -87,9 +88,7 @@ import { CreatePaymentRequest, Payment, PaymentsService } from './payments.servi
                   } @else {
                     @for (invoice of invoices; track invoice.id) {
                       <mat-option [value]="invoice.id">
-                        {{ invoice.invoiceNumber }} · total
-                        {{ invoice.totalAmount | currency : 'COP' : 'symbol' : '1.0-0' }} · abonado
-                        {{ invoice.paidAmount | currency : 'COP' : 'symbol' : '1.0-0' }} · saldo
+                        {{ invoice.invoiceNumber }} ·
                         {{ invoice.balanceAmount | currency : 'COP' : 'symbol' : '1.0-0' }}
                       </mat-option>
                     }
@@ -101,14 +100,6 @@ import { CreatePaymentRequest, Payment, PaymentsService } from './payments.servi
               <mat-hint>El recibo de pago queda ligado a la factura seleccionada.</mat-hint>
             </mat-form-field>
 
-            @if (selectedInvoice$ | async; as selectedInvoice) {
-              <p class="balance-summary full">
-                Total {{ selectedInvoice.totalAmount | currency : 'COP' : 'symbol' : '1.0-0' }} · abonado
-                {{ selectedInvoice.paidAmount | currency : 'COP' : 'symbol' : '1.0-0' }} · saldo
-                {{ selectedInvoice.balanceAmount | currency : 'COP' : 'symbol' : '1.0-0' }}
-              </p>
-            }
-
             <mat-form-field appearance="outline">
               <mat-label>Fecha</mat-label>
               <input matInput [matDatepicker]="pd" formControlName="paymentDate" />
@@ -119,7 +110,11 @@ import { CreatePaymentRequest, Payment, PaymentsService } from './payments.servi
             <mat-form-field appearance="outline">
               <mat-label>Monto</mat-label>
               <input matInput type="number" formControlName="amount" />
-              <mat-hint>Se sugiere el saldo pendiente de la factura.</mat-hint>
+              @if (form.controls.amount.hasError('max')) {
+                <mat-error>El monto no puede superar el saldo pendiente.</mat-error>
+              } @else {
+                <mat-hint>Máximo el saldo pendiente de la factura.</mat-hint>
+              }
             </mat-form-field>
 
             <mat-form-field appearance="outline">
@@ -210,6 +205,7 @@ export class PaymentsPage {
   private readonly ownersService = inject(OwnersService);
   private readonly fb = inject(FormBuilder);
   private readonly snackBar = inject(MatSnackBar);
+  private readonly destroyRef = inject(DestroyRef);
 
   private readonly refresh$ = new BehaviorSubject<void>(undefined);
   private readonly savingSubject = new BehaviorSubject<boolean>(false);
@@ -229,7 +225,10 @@ export class PaymentsPage {
 
   private readonly ownerId$ = this.form.controls.ownerId.valueChanges.pipe(
     startWith(this.form.controls.ownerId.value),
-    tap(() => this.form.patchValue({ invoiceId: '', amount: 0 })),
+    tap(() => {
+      this.form.patchValue({ invoiceId: '', amount: 0 });
+      this.syncAmountValidators(null);
+    }),
   );
 
   private readonly invoiceId$ = this.form.controls.invoiceId.valueChanges.pipe(
@@ -266,7 +265,13 @@ export class PaymentsPage {
 
   protected readonly selectedInvoice$ = combineLatest([this.payableInvoices$, this.invoiceId$]).pipe(
     map(([invoices, invoiceId]) => invoices.find((invoice) => invoice.id === invoiceId) ?? null),
+    tap((invoice) => this.syncAmountValidators(invoice?.balanceAmount ?? null)),
+    shareReplay({ bufferSize: 1, refCount: true }),
   );
+
+  constructor() {
+    this.selectedInvoice$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe();
+  }
 
   protected readonly payments$ = combineLatest([this.ownerId$, this.refresh$]).pipe(
     switchMap(([ownerId]) => {
@@ -290,10 +295,21 @@ export class PaymentsPage {
         tap((invoice) => {
           if (invoice) {
             this.form.patchValue({ amount: invoice.balanceAmount });
+            this.syncAmountValidators(invoice.balanceAmount);
           }
         }),
       )
       .subscribe();
+  }
+
+  private syncAmountValidators(balance: number | null) {
+    const amountControl = this.form.controls.amount;
+    const validators = [Validators.required, Validators.min(0.01)];
+    if (balance != null && balance > 0) {
+      validators.push(Validators.max(balance));
+    }
+    amountControl.setValidators(validators);
+    amountControl.updateValueAndValidity({ emitEvent: false });
   }
 
   submit() {
@@ -335,6 +351,7 @@ export class PaymentsPage {
       reference: '',
       notes: '',
     });
+    this.syncAmountValidators(null);
   }
 }
 
