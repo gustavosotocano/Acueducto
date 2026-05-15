@@ -24,13 +24,6 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
 class MonthlyInvoiceBatchIT extends IntegrationTestBase {
-
-    @Autowired
-    MockMvc mockMvc;
-
-    @Autowired
-    ObjectMapper objectMapper;
-
     @Test
     void monthlyBatchIsIdempotentPerWaterRightAndPeriod() throws Exception {
         String tenant = "tenant_rf060_batch";
@@ -44,18 +37,16 @@ class MonthlyInvoiceBatchIT extends IntegrationTestBase {
                 {"billingYear":2026,"billingMonth":4,"issueDate":"2026-04-28","dueDate":"2026-05-15"}
                 """;
 
-        mockMvc.perform(post("/api/v1/invoices/batch/monthly")
-                        .header("X-Tenant-Id", tenant)
+        mockMvc.perform(withTenantAuth(tenant, post("/api/v1/invoices/batch/monthly")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(batchPayload))
+                        .content(batchPayload)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.createdCount", is(1)))
                 .andExpect(jsonPath("$.skippedCount", is(0)));
 
-        mockMvc.perform(post("/api/v1/invoices/batch/monthly")
-                        .header("X-Tenant-Id", tenant)
+        mockMvc.perform(withTenantAuth(tenant, post("/api/v1/invoices/batch/monthly")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(batchPayload))
+                        .content(batchPayload)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.createdCount", is(0)))
                 .andExpect(jsonPath("$.skippedCount", is(1)))
@@ -70,7 +61,7 @@ class MonthlyInvoiceBatchIT extends IntegrationTestBase {
                 null,
                 null
         ));
-        mockMvc.perform(post("/api/v1/tenants")
+        mockMvc.perform(withPlatformAuth(post("/api/v1/tenants"))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(body))
                 .andExpect(status().isCreated());
@@ -85,10 +76,9 @@ class MonthlyInvoiceBatchIT extends IntegrationTestBase {
                 "3000000000",
                 "ana.lopez@example.com"
         ));
-        String body = mockMvc.perform(post("/api/v1/owners")
-                        .header("X-Tenant-Id", tenant)
+        String body = mockMvc.perform(withTenantAuth(tenant, post("/api/v1/owners")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(payload))
+                        .content(payload)))
                 .andExpect(status().isCreated())
                 .andReturn()
                 .getResponse()
@@ -104,10 +94,9 @@ class MonthlyInvoiceBatchIT extends IntegrationTestBase {
                 ownerId,
                 LocalDate.of(2026, 1, 1)
         ));
-        String body = mockMvc.perform(post("/api/v1/properties")
-                        .header("X-Tenant-Id", tenant)
+        String body = mockMvc.perform(withTenantAuth(tenant, post("/api/v1/properties")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(payload))
+                        .content(payload)))
                 .andExpect(status().isCreated())
                 .andReturn()
                 .getResponse()
@@ -126,10 +115,9 @@ class MonthlyInvoiceBatchIT extends IntegrationTestBase {
                 new BigDecimal("25000.00"),
                 LocalDate.of(2026, 1, 1)
         ));
-        String body = mockMvc.perform(post("/api/v1/water-rights")
-                        .header("X-Tenant-Id", tenant)
+        String body = mockMvc.perform(withTenantAuth(tenant, post("/api/v1/water-rights")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(payload))
+                        .content(payload)))
                 .andExpect(status().isCreated())
                 .andReturn()
                 .getResponse()

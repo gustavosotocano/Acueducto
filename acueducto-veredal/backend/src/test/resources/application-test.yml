@@ -4,3 +4,11 @@ spring:
   jpa:
     open-in-view: false
 
+app:
+  security:
+    jwt:
+      secret: test-jwt-secret-acueducto-veredal-min-32-chars
+      expiration-hours: 8
+    password-reset:
+      expiration-hours: 1
+

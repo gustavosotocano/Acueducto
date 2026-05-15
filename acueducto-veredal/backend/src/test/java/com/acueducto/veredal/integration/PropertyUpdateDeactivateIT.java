@@ -24,13 +24,6 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
 class PropertyUpdateDeactivateIT extends IntegrationTestBase {
-
-    @Autowired
-    MockMvc mockMvc;
-
-    @Autowired
-    ObjectMapper objectMapper;
-
     @Test
     void updateAndDeactivateProperty() throws Exception {
         String tenant = "tenant_prop_update";
@@ -43,23 +36,20 @@ class PropertyUpdateDeactivateIT extends IntegrationTestBase {
                 "Carrera 45 # 10-20"
         ));
 
-        mockMvc.perform(put("/api/v1/properties/{id}", propertyId)
-                        .header("X-Tenant-Id", tenant)
+        mockMvc.perform(withTenantAuth(tenant, put("/api/v1/properties/{id}", propertyId)
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(updatePayload))
+                        .content(updatePayload)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id", is(propertyId.toString())))
                 .andExpect(jsonPath("$.propertyName", is("Predio actualizado")))
                 .andExpect(jsonPath("$.addressLine", is("Carrera 45 # 10-20")));
 
-        mockMvc.perform(post("/api/v1/properties/{id}/deactivate", propertyId)
-                        .header("X-Tenant-Id", tenant))
+        mockMvc.perform(withTenantAuth(tenant, post("/api/v1/properties/{id}/deactivate", propertyId)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id", is(propertyId.toString())))
                 .andExpect(jsonPath("$.status", is("INACTIVE")));
 
-        mockMvc.perform(get("/api/v1/properties/{id}", propertyId)
-                        .header("X-Tenant-Id", tenant))
+        mockMvc.perform(withTenantAuth(tenant, get("/api/v1/properties/{id}", propertyId)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.status", is("INACTIVE")));
     }
@@ -73,10 +63,9 @@ class PropertyUpdateDeactivateIT extends IntegrationTestBase {
                 fullName.toLowerCase().replace(" ", ".") + "@example.com"
         ));
 
-        String body = mockMvc.perform(post("/api/v1/owners")
-                        .header("X-Tenant-Id", tenant)
+        String body = mockMvc.perform(withTenantAuth(tenant, post("/api/v1/owners")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(payload))
+                        .content(payload)))
                 .andExpect(status().isCreated())
                 .andReturn()
                 .getResponse()
@@ -94,10 +83,9 @@ class PropertyUpdateDeactivateIT extends IntegrationTestBase {
                 ownershipStartDate
         ));
 
-        String body = mockMvc.perform(post("/api/v1/properties")
-                        .header("X-Tenant-Id", tenant)
+        String body = mockMvc.perform(withTenantAuth(tenant, post("/api/v1/properties")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(payload))
+                        .content(payload)))
                 .andExpect(status().isCreated())
                 .andReturn()
                 .getResponse()

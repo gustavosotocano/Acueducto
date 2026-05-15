@@ -25,13 +25,6 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
 class CrossTenantAccessIT extends IntegrationTestBase {
-
-    @Autowired
-    MockMvc mockMvc;
-
-    @Autowired
-    ObjectMapper objectMapper;
-
     @Test
     void preventsCrossTenantAccessForProperty() throws Exception {
         String tenantA = "tenant_prop_a";
@@ -40,20 +33,18 @@ class CrossTenantAccessIT extends IntegrationTestBase {
         UUID ownerA = createOwner(tenantA, "901", "Owner A");
         UUID propertyId = createProperty(tenantA, ownerA, "P-CA002-1");
 
-        mockMvc.perform(get("/api/v1/properties/{id}", propertyId).header("X-Tenant-Id", tenantB))
+        mockMvc.perform(withTenantAuth(tenantB, get("/api/v1/properties/{id}", propertyId)))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.message", is("Property not found")));
 
         String updatePayload = objectMapper.writeValueAsString(new UpdatePropertyPayload("X", "Y"));
-        mockMvc.perform(put("/api/v1/properties/{id}", propertyId)
-                        .header("X-Tenant-Id", tenantB)
+        mockMvc.perform(withTenantAuth(tenantB, put("/api/v1/properties/{id}", propertyId)
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(updatePayload))
+                        .content(updatePayload)))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.message", is("Property not found")));
 
-        mockMvc.perform(post("/api/v1/properties/{id}/deactivate", propertyId)
-                        .header("X-Tenant-Id", tenantB))
+        mockMvc.perform(withTenantAuth(tenantB, post("/api/v1/properties/{id}/deactivate", propertyId)))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.message", is("Property not found")));
 
@@ -61,15 +52,13 @@ class CrossTenantAccessIT extends IntegrationTestBase {
         String changeOwnerPayload = objectMapper.writeValueAsString(new ChangeOwnerPayload(
                 ownerB, LocalDate.of(2026, 3, 10), "SALE", "x"
         ));
-        mockMvc.perform(post("/api/v1/properties/{id}/owner-changes", propertyId)
-                        .header("X-Tenant-Id", tenantB)
+        mockMvc.perform(withTenantAuth(tenantB, post("/api/v1/properties/{id}/owner-changes", propertyId)
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(changeOwnerPayload))
+                        .content(changeOwnerPayload)))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.message", is("Property not found")));
 
-        mockMvc.perform(get("/api/v1/properties/{id}/owner-history", propertyId)
-                        .header("X-Tenant-Id", tenantB))
+        mockMvc.perform(withTenantAuth(tenantB, get("/api/v1/properties/{id}/owner-history", propertyId)))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.message", is("Property not found")));
     }
@@ -83,7 +72,7 @@ class CrossTenantAccessIT extends IntegrationTestBase {
         UUID propertyA = createProperty(tenantA, ownerA, "P-CA002-2");
         UUID waterRightId = createWaterRight(tenantA, ownerA, propertyA, "WR-CA002-1");
 
-        mockMvc.perform(get("/api/v1/water-rights/{id}", waterRightId).header("X-Tenant-Id", tenantB))
+        mockMvc.perform(withTenantAuth(tenantB, get("/api/v1/water-rights/{id}", waterRightId)))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.message", is("Water right not found")));
 
@@ -93,33 +82,29 @@ class CrossTenantAccessIT extends IntegrationTestBase {
         String updatePayload = objectMapper.writeValueAsString(new UpdateWaterRightPayload(
                 propertyB, null, "ACTIVE", "COMMERCIAL", new BigDecimal("1.00")
         ));
-        mockMvc.perform(put("/api/v1/water-rights/{id}", waterRightId)
-                        .header("X-Tenant-Id", tenantB)
+        mockMvc.perform(withTenantAuth(tenantB, put("/api/v1/water-rights/{id}", waterRightId)
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(updatePayload))
+                        .content(updatePayload)))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.message", is("Water right not found")));
 
         String deactivatePayload = objectMapper.writeValueAsString(new DeactivateWaterRightPayload(LocalDate.of(2026, 4, 23)));
-        mockMvc.perform(post("/api/v1/water-rights/{id}/deactivate", waterRightId)
-                        .header("X-Tenant-Id", tenantB)
+        mockMvc.perform(withTenantAuth(tenantB, post("/api/v1/water-rights/{id}/deactivate", waterRightId)
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(deactivatePayload))
+                        .content(deactivatePayload)))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.message", is("Water right not found")));
 
         String transferPayload = objectMapper.writeValueAsString(new TransferPayload(
                 ownerB, LocalDate.of(2026, 3, 18), "SALE", "x"
         ));
-        mockMvc.perform(post("/api/v1/water-rights/{id}/transfers", waterRightId)
-                        .header("X-Tenant-Id", tenantB)
+        mockMvc.perform(withTenantAuth(tenantB, post("/api/v1/water-rights/{id}/transfers", waterRightId)
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(transferPayload))
+                        .content(transferPayload)))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.message", is("Water right not found")));
 
-        mockMvc.perform(get("/api/v1/water-rights/{id}/owner-history", waterRightId)
-                        .header("X-Tenant-Id", tenantB))
+        mockMvc.perform(withTenantAuth(tenantB, get("/api/v1/water-rights/{id}/owner-history", waterRightId)))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.message", is("Water right not found")));
     }
@@ -133,10 +118,9 @@ class CrossTenantAccessIT extends IntegrationTestBase {
                 fullName.toLowerCase().replace(" ", ".") + "@example.com"
         ));
 
-        String body = mockMvc.perform(post("/api/v1/owners")
-                        .header("X-Tenant-Id", tenant)
+        String body = mockMvc.perform(withTenantAuth(tenant, post("/api/v1/owners")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(payload))
+                        .content(payload)))
                 .andExpect(status().isCreated())
                 .andReturn()
                 .getResponse()
@@ -154,10 +138,9 @@ class CrossTenantAccessIT extends IntegrationTestBase {
                 LocalDate.of(2026, 1, 1)
         ));
 
-        String body = mockMvc.perform(post("/api/v1/properties")
-                        .header("X-Tenant-Id", tenant)
+        String body = mockMvc.perform(withTenantAuth(tenant, post("/api/v1/properties")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(payload))
+                        .content(payload)))
                 .andExpect(status().isCreated())
                 .andReturn()
                 .getResponse()
@@ -178,10 +161,9 @@ class CrossTenantAccessIT extends IntegrationTestBase {
                 LocalDate.of(2026, 1, 1)
         ));
 
-        String body = mockMvc.perform(post("/api/v1/water-rights")
-                        .header("X-Tenant-Id", tenant)
+        String body = mockMvc.perform(withTenantAuth(tenant, post("/api/v1/water-rights")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(payload))
+                        .content(payload)))
                 .andExpect(status().isCreated())
                 .andReturn()
                 .getResponse()

@@ -7,14 +7,25 @@
   border-right: 1px solid rgba(255, 255, 255, 0.06);
   background: var(--app-sidenav-bg);
   color: var(--app-sidenav-fg);
+
+  --mat-list-list-item-label-text-color: var(--app-sidenav-fg);
+  --mat-list-list-item-leading-icon-color: var(--app-sidenav-fg);
+  --mat-list-list-item-hover-leading-icon-color: var(--app-sidenav-fg);
+  --mat-list-list-item-focus-label-text-color: var(--app-sidenav-fg);
+  --mat-list-list-item-hover-label-text-color: var(--app-sidenav-fg);
 }
 
 .sidenav :global(.mat-mdc-list-item) {
   color: var(--app-sidenav-fg);
 }
 
+.sidenav :global(.mat-mdc-list-item .mdc-list-item__primary-text),
+.sidenav :global(.mat-mdc-list-item .mat-mdc-list-item-title) {
+  color: var(--app-sidenav-fg);
+}
+
 .sidenav :global(.mat-mdc-list-item .mat-icon) {
-  color: var(--app-sidenav-muted);
+  color: var(--app-sidenav-fg);
 }
 
 .brand {
@@ -43,6 +54,7 @@
 
 .name {
   font: var(--mat-sys-title-medium);
+  color: var(--app-sidenav-fg);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -68,6 +80,13 @@
 
 .spacer {
   flex: 1;
+}
+
+.user-label,
+.tenant-readonly {
+  margin-right: 8px;
+  font: var(--mat-sys-body-medium);
+  color: var(--mat-sys-on-surface-variant);
 }
 
 .page {

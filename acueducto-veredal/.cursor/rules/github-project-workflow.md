@@ -9,6 +9,7 @@ Cuando el usuario diga “tomemos la RF-XXX y desarrollemosla” (o “tomemos l
 
 ### Branching y PR
 - **1 rama por historia**.
+  - Siempre haz git pull de la rama main antes de crear la nueva rama
   - Nombre sugerido: `rf-XXX-<slug-corto>` (ej: `rf-055-consecutivo-factura`)
 - Abrir **PR** hacia la rama principal del repo (la que corresponda: `main`/`master`).
 

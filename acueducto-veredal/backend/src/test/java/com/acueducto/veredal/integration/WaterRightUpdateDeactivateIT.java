@@ -25,13 +25,6 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
 class WaterRightUpdateDeactivateIT extends IntegrationTestBase {
-
-    @Autowired
-    MockMvc mockMvc;
-
-    @Autowired
-    ObjectMapper objectMapper;
-
     @Test
     void updateAndDeactivateWaterRight() throws Exception {
         String tenant = "tenant_wr_update";
@@ -50,10 +43,9 @@ class WaterRightUpdateDeactivateIT extends IntegrationTestBase {
                 new BigDecimal("30000.00")
         ));
 
-        mockMvc.perform(put("/api/v1/water-rights/{id}", waterRightId)
-                        .header("X-Tenant-Id", tenant)
+        mockMvc.perform(withTenantAuth(tenant, put("/api/v1/water-rights/{id}", waterRightId)
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(updatePayload))
+                        .content(updatePayload)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id", is(waterRightId.toString())))
                 .andExpect(jsonPath("$.propertyId", is(property2Id.toString())))
@@ -63,17 +55,15 @@ class WaterRightUpdateDeactivateIT extends IntegrationTestBase {
         LocalDate endDate = LocalDate.of(2026, 4, 23);
         String deactivatePayload = objectMapper.writeValueAsString(new DeactivateWaterRightPayload(endDate));
 
-        mockMvc.perform(post("/api/v1/water-rights/{id}/deactivate", waterRightId)
-                        .header("X-Tenant-Id", tenant)
+        mockMvc.perform(withTenantAuth(tenant, post("/api/v1/water-rights/{id}/deactivate", waterRightId)
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(deactivatePayload))
+                        .content(deactivatePayload)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id", is(waterRightId.toString())))
                 .andExpect(jsonPath("$.serviceStatus", is("INACTIVE")))
                 .andExpect(jsonPath("$.ownershipEndDate", is(endDate.toString())));
 
-        mockMvc.perform(get("/api/v1/water-rights/{id}", waterRightId)
-                        .header("X-Tenant-Id", tenant))
+        mockMvc.perform(withTenantAuth(tenant, get("/api/v1/water-rights/{id}", waterRightId)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.serviceStatus", is("INACTIVE")))
                 .andExpect(jsonPath("$.ownershipEndDate", is(endDate.toString())));
@@ -88,10 +78,9 @@ class WaterRightUpdateDeactivateIT extends IntegrationTestBase {
                 fullName.toLowerCase().replace(" ", ".") + "@example.com"
         ));
 
-        String body = mockMvc.perform(post("/api/v1/owners")
-                        .header("X-Tenant-Id", tenant)
+        String body = mockMvc.perform(withTenantAuth(tenant, post("/api/v1/owners")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(payload))
+                        .content(payload)))
                 .andExpect(status().isCreated())
                 .andReturn()
                 .getResponse()
@@ -109,10 +98,9 @@ class WaterRightUpdateDeactivateIT extends IntegrationTestBase {
                 LocalDate.of(2026, 1, 1)
         ));
 
-        String body = mockMvc.perform(post("/api/v1/properties")
-                        .header("X-Tenant-Id", tenant)
+        String body = mockMvc.perform(withTenantAuth(tenant, post("/api/v1/properties")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(payload))
+                        .content(payload)))
                 .andExpect(status().isCreated())
                 .andReturn()
                 .getResponse()
@@ -133,10 +121,9 @@ class WaterRightUpdateDeactivateIT extends IntegrationTestBase {
                 LocalDate.of(2026, 1, 1)
         ));
 
-        String body = mockMvc.perform(post("/api/v1/water-rights")
-                        .header("X-Tenant-Id", tenant)
+        String body = mockMvc.perform(withTenantAuth(tenant, post("/api/v1/water-rights")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(payload))
+                        .content(payload)))
                 .andExpect(status().isCreated())
                 .andReturn()
                 .getResponse()
