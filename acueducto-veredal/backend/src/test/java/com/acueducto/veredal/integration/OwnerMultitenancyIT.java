@@ -23,7 +23,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 class OwnerMultitenancyIT extends IntegrationTestBase {
     @Test
     void returnsTenantRequiredErrorWhenHeaderMissing() throws Exception {
-        mockMvc.perform(withPlatformAuth(get("/api/v1/owners")))
+        String token = com.acueducto.veredal.support.AuthTestSupport.adminToken(mockMvc, objectMapper);
+        mockMvc.perform(get("/api/v1/owners").header("Authorization", "Bearer " + token))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.message").value(startsWith("TENANT_REQUIRED")));
     }
@@ -35,7 +36,8 @@ class OwnerMultitenancyIT extends IntegrationTestBase {
         String ownerPayload = objectMapper.writeValueAsString(new CreateOwnerPayload(
                 "CC",
                 "123",
-                "Juan Perez",
+                "Juan",
+                "Perez",
                 "3000000000",
                 "juan@example.com"
         ));
@@ -64,7 +66,8 @@ class OwnerMultitenancyIT extends IntegrationTestBase {
         String ownerPayload = objectMapper.writeValueAsString(new CreateOwnerPayload(
                 "CC",
                 "999",
-                "Owner A",
+                "Owner",
+                "A",
                 "3000000000",
                 "owner.a@example.com"
         ));
@@ -84,7 +87,8 @@ class OwnerMultitenancyIT extends IntegrationTestBase {
                 .andExpect(jsonPath("$.message", is("Owner not found")));
 
         String updatePayload = objectMapper.writeValueAsString(new UpdateOwnerPayload(
-                "Owner A Updated",
+                "Owner",
+                "A Updated",
                 "3111111111",
                 "owner.updated@example.com"
         ));
@@ -103,14 +107,16 @@ class OwnerMultitenancyIT extends IntegrationTestBase {
     private record CreateOwnerPayload(
             String documentType,
             String documentNumber,
-            String fullName,
+            String firstName,
+            String lastName,
             String phone,
             String email
     ) {
     }
 
     private record UpdateOwnerPayload(
-            String fullName,
+            String firstName,
+            String lastName,
             String phone,
             String email
     ) {

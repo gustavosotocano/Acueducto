@@ -21,25 +21,31 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @ActiveProfiles("test")
 class AuthRolesIT extends IntegrationTestBase {
 
-    private static final String TENANT = "tenant_rf066_roles";
+    private String tenantId;
+    private String presidentEmail;
+    private String treasuryEmail;
 
     @BeforeEach
     void setUp() throws Exception {
-        createTenant(TENANT);
-        seedUser("presidente@demo.local", "PRESIDENT");
-        seedUser("tesoreria@demo.local", "TREASURY");
+        tenantId = "tenant_rf066_" + UUID.randomUUID().toString().substring(0, 8);
+        presidentEmail = "presidente." + tenantId + "@test.local";
+        treasuryEmail = "tesoreria." + tenantId + "@test.local";
+        createTenant(tenantId);
+        seedUser(presidentEmail, "PRESIDENT");
+        seedUser(treasuryEmail, "TREASURY");
     }
 
     @Test
     void presidentCannotRegisterPayments() throws Exception {
-        String token = login("presidente@demo.local");
+        String token = login(presidentEmail);
 
         mockMvc.perform(post("/api/v1/payments")
                         .header("Authorization", "Bearer " + token)
-                        .header("X-Tenant-Id", TENANT)
+                        .header("X-Tenant-Id", tenantId)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {
+                                  "invoiceId":"00000000-0000-0000-0000-000000000001",
                                   "paymentDate":"2026-05-01",
                                   "amount":1000.00,
                                   "method":"CASH"
@@ -50,11 +56,11 @@ class AuthRolesIT extends IntegrationTestBase {
 
     @Test
     void treasurerCanRegisterPaymentsWithoutInvoiceFailsValidation() throws Exception {
-        String token = login("tesoreria@demo.local");
+        String token = login(treasuryEmail);
 
         mockMvc.perform(post("/api/v1/payments")
                         .header("Authorization", "Bearer " + token)
-                        .header("X-Tenant-Id", TENANT)
+                        .header("X-Tenant-Id", tenantId)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {
@@ -68,7 +74,7 @@ class AuthRolesIT extends IntegrationTestBase {
 
     @Test
     void nonAdminCannotCreateTenants() throws Exception {
-        String token = login("tesoreria@demo.local");
+        String token = login(treasuryEmail);
         String body = objectMapper.writeValueAsString(new CreateTenantRequest(
                 "tenant_blocked",
                 "Blocked",
@@ -107,9 +113,9 @@ class AuthRolesIT extends IntegrationTestBase {
                   "roleCode":"%s",
                   "tenantId":"%s"
                 }
-                """.formatted(role, email, AuthDataInitializer.DEFAULT_PASSWORD, role, TENANT);
+                """.formatted(role, email, AuthDataInitializer.DEFAULT_PASSWORD, role, tenantId);
 
-        mockMvc.perform(withTenantAuth(TENANT, post("/api/v1/users")
+        mockMvc.perform(withTenantAuth(tenantId, post("/api/v1/users")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(payload)))
                 .andExpect(status().isCreated());
