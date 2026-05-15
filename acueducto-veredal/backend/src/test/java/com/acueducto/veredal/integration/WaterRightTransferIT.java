@@ -27,13 +27,6 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
 class WaterRightTransferIT extends IntegrationTestBase {
-
-    @Autowired
-    MockMvc mockMvc;
-
-    @Autowired
-    ObjectMapper objectMapper;
-
     @Test
     void transferMaintainsSameWaterRightAndWritesOwnerHistory() throws Exception {
         String tenant = "tenant_transfer";
@@ -51,16 +44,14 @@ class WaterRightTransferIT extends IntegrationTestBase {
                 "test transfer"
         ));
 
-        mockMvc.perform(post("/api/v1/water-rights/{id}/transfers", waterRightId)
-                        .header("X-Tenant-Id", tenant)
+        mockMvc.perform(withTenantAuth(tenant, post("/api/v1/water-rights/{id}/transfers", waterRightId)
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(transferPayload))
+                        .content(transferPayload)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id", is(waterRightId.toString())))
                 .andExpect(jsonPath("$.ownerId", is(owner2Id.toString())));
 
-        mockMvc.perform(get("/api/v1/water-rights/{id}/owner-history", waterRightId)
-                        .header("X-Tenant-Id", tenant))
+        mockMvc.perform(withTenantAuth(tenant, get("/api/v1/water-rights/{id}/owner-history", waterRightId)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$", hasSize(2)))
                 .andExpect(jsonPath("$[0].ownerId", is(owner2Id.toString())))
@@ -76,10 +67,9 @@ class WaterRightTransferIT extends IntegrationTestBase {
         UUID propertyId = createProperty(tenant, ownerId);
         UUID waterRightId = createWaterRight(tenant, ownerId, propertyId);
 
-        mockMvc.perform(post("/api/v1/water-rights/{id}/deactivate", waterRightId)
-                        .header("X-Tenant-Id", tenant)
+        mockMvc.perform(withTenantAuth(tenant, post("/api/v1/water-rights/{id}/deactivate", waterRightId)
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("{}"))
+                        .content("{}")))
                 .andExpect(status().isBadRequest());
     }
 
@@ -92,10 +82,9 @@ class WaterRightTransferIT extends IntegrationTestBase {
                 fullName.toLowerCase().replace(" ", ".") + "@example.com"
         ));
 
-        String body = mockMvc.perform(post("/api/v1/owners")
-                        .header("X-Tenant-Id", tenant)
+        String body = mockMvc.perform(withTenantAuth(tenant, post("/api/v1/owners")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(payload))
+                        .content(payload)))
                 .andExpect(status().isCreated())
                 .andReturn()
                 .getResponse()
@@ -113,10 +102,9 @@ class WaterRightTransferIT extends IntegrationTestBase {
                 LocalDate.of(2026, 1, 1)
         ));
 
-        String body = mockMvc.perform(post("/api/v1/properties")
-                        .header("X-Tenant-Id", tenant)
+        String body = mockMvc.perform(withTenantAuth(tenant, post("/api/v1/properties")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(payload))
+                        .content(payload)))
                 .andExpect(status().isCreated())
                 .andReturn()
                 .getResponse()
@@ -137,10 +125,9 @@ class WaterRightTransferIT extends IntegrationTestBase {
                 LocalDate.of(2026, 1, 1)
         ));
 
-        String body = mockMvc.perform(post("/api/v1/water-rights")
-                        .header("X-Tenant-Id", tenant)
+        String body = mockMvc.perform(withTenantAuth(tenant, post("/api/v1/water-rights")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(payload))
+                        .content(payload)))
                 .andExpect(status().isCreated())
                 .andReturn()
                 .getResponse()

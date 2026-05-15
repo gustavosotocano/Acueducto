@@ -27,7 +27,7 @@ public class TenantExistsFilter extends OncePerRequestFilter {
         String path = request.getRequestURI();
         // Tenant administration endpoints should be accessible without an existing tenant header.
         if (path.startsWith("/api/v1/tenants")) return true;
-        // Allow common infra endpoints if enabled later.
+        if (path.startsWith("/api/v1/auth")) return true;
         if (path.startsWith("/actuator")) return true;
         return false;
     }

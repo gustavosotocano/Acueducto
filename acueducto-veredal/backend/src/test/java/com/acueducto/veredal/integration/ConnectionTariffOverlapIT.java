@@ -22,13 +22,6 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
 class ConnectionTariffOverlapIT extends IntegrationTestBase {
-
-    @Autowired
-    MockMvc mockMvc;
-
-    @Autowired
-    ObjectMapper objectMapper;
-
     @Test
     void rejectsOverlappingTariffForSameConnectionType() throws Exception {
         String tenant = "tenant_rf065_tariff";
@@ -37,29 +30,26 @@ class ConnectionTariffOverlapIT extends IntegrationTestBase {
         String first = """
                 {"connectionType":"RESIDENTIAL","amount":100.00,"validFrom":"2026-01-01","validTo":"2026-06-30"}
                 """;
-        mockMvc.perform(post("/api/v1/connection-tariffs")
-                        .header("X-Tenant-Id", tenant)
+        mockMvc.perform(withTenantAuth(tenant, post("/api/v1/connection-tariffs")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(first))
+                        .content(first)))
                 .andExpect(status().isCreated());
 
         String overlapping = """
                 {"connectionType":"RESIDENTIAL","amount":200.00,"validFrom":"2026-03-01","validTo":null}
                 """;
-        mockMvc.perform(post("/api/v1/connection-tariffs")
-                        .header("X-Tenant-Id", tenant)
+        mockMvc.perform(withTenantAuth(tenant, post("/api/v1/connection-tariffs")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(overlapping))
+                        .content(overlapping)))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.message", containsString("overlap")));
 
         String adjacent = """
                 {"connectionType":"RESIDENTIAL","amount":150.00,"validFrom":"2026-07-01","validTo":null}
                 """;
-        mockMvc.perform(post("/api/v1/connection-tariffs")
-                        .header("X-Tenant-Id", tenant)
+        mockMvc.perform(withTenantAuth(tenant, post("/api/v1/connection-tariffs")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(adjacent))
+                        .content(adjacent)))
                 .andExpect(status().isCreated());
     }
 
@@ -71,24 +61,21 @@ class ConnectionTariffOverlapIT extends IntegrationTestBase {
         String body = """
                 {"connectionType":"COMMERCIAL","amount":999.50,"validFrom":"2026-02-01","validTo":"2026-08-31"}
                 """;
-        mockMvc.perform(post("/api/v1/connection-tariffs")
-                        .header("X-Tenant-Id", tenant)
+        mockMvc.perform(withTenantAuth(tenant, post("/api/v1/connection-tariffs")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(body))
+                        .content(body)))
                 .andExpect(status().isCreated());
 
-        mockMvc.perform(get("/api/v1/connection-tariffs/applicable")
-                        .header("X-Tenant-Id", tenant)
+        mockMvc.perform(withTenantAuth(tenant, get("/api/v1/connection-tariffs/applicable")
                         .param("connectionType", "COMMERCIAL")
-                        .param("onDate", "2026-04-15"))
+                        .param("onDate", "2026-04-15")))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.connectionType", is("COMMERCIAL")))
                 .andExpect(jsonPath("$.amount", is(999.5)));
 
-        mockMvc.perform(get("/api/v1/connection-tariffs/applicable")
-                        .header("X-Tenant-Id", tenant)
+        mockMvc.perform(withTenantAuth(tenant, get("/api/v1/connection-tariffs/applicable")
                         .param("connectionType", "COMMERCIAL")
-                        .param("onDate", "2026-12-01"))
+                        .param("onDate", "2026-12-01")))
                 .andExpect(status().isNotFound());
     }
 
@@ -100,7 +87,7 @@ class ConnectionTariffOverlapIT extends IntegrationTestBase {
                 null,
                 null
         ));
-        mockMvc.perform(post("/api/v1/tenants")
+        mockMvc.perform(withPlatformAuth(post("/api/v1/tenants"))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(payload))
                 .andExpect(status().isCreated());

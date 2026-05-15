@@ -25,13 +25,6 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
 class PropertyOwnerHistoryIT extends IntegrationTestBase {
-
-    @Autowired
-    MockMvc mockMvc;
-
-    @Autowired
-    ObjectMapper objectMapper;
-
     @Test
     void changeOwnerClosesPreviousHistoryAndOpensNewOne() throws Exception {
         String tenant = "tenant_property_history";
@@ -42,8 +35,7 @@ class PropertyOwnerHistoryIT extends IntegrationTestBase {
         LocalDate ownershipStartDate = LocalDate.of(2026, 1, 1);
         UUID propertyId = createProperty(tenant, owner1Id, ownershipStartDate);
 
-        mockMvc.perform(get("/api/v1/properties/{id}/owner-history", propertyId)
-                        .header("X-Tenant-Id", tenant))
+        mockMvc.perform(withTenantAuth(tenant, get("/api/v1/properties/{id}/owner-history", propertyId)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$", hasSize(1)))
                 .andExpect(jsonPath("$[0].ownerId", is(owner1Id.toString())))
@@ -58,15 +50,13 @@ class PropertyOwnerHistoryIT extends IntegrationTestBase {
                 "Cambio de propietario por compraventa"
         ));
 
-        mockMvc.perform(post("/api/v1/properties/{id}/owner-changes", propertyId)
-                        .header("X-Tenant-Id", tenant)
+        mockMvc.perform(withTenantAuth(tenant, post("/api/v1/properties/{id}/owner-changes", propertyId)
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(changePayload))
+                        .content(changePayload)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.ownerId", is(owner2Id.toString())));
 
-        mockMvc.perform(get("/api/v1/properties/{id}/owner-history", propertyId)
-                        .header("X-Tenant-Id", tenant))
+        mockMvc.perform(withTenantAuth(tenant, get("/api/v1/properties/{id}/owner-history", propertyId)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$", hasSize(2)))
                 // newest record first
@@ -88,10 +78,9 @@ class PropertyOwnerHistoryIT extends IntegrationTestBase {
                 fullName.toLowerCase().replace(" ", ".") + "@example.com"
         ));
 
-        String body = mockMvc.perform(post("/api/v1/owners")
-                        .header("X-Tenant-Id", tenant)
+        String body = mockMvc.perform(withTenantAuth(tenant, post("/api/v1/owners")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(payload))
+                        .content(payload)))
                 .andExpect(status().isCreated())
                 .andReturn()
                 .getResponse()
@@ -109,10 +98,9 @@ class PropertyOwnerHistoryIT extends IntegrationTestBase {
                 ownershipStartDate
         ));
 
-        String body = mockMvc.perform(post("/api/v1/properties")
-                        .header("X-Tenant-Id", tenant)
+        String body = mockMvc.perform(withTenantAuth(tenant, post("/api/v1/properties")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(payload))
+                        .content(payload)))
                 .andExpect(status().isCreated())
                 .andReturn()
                 .getResponse()

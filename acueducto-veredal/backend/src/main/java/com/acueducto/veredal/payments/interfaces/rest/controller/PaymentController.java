@@ -4,6 +4,7 @@ import com.acueducto.veredal.payments.application.PaymentService;
 import com.acueducto.veredal.payments.infrastructure.persistence.jpa.PaymentEntity;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
@@ -22,6 +23,7 @@ public class PaymentController {
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
+    @PreAuthorize("hasAnyRole('ADMIN', 'TREASURY')")
     public PaymentResponse create(@Valid @RequestBody CreatePaymentRequest request) {
         return toResponse(paymentService.create(request));
     }

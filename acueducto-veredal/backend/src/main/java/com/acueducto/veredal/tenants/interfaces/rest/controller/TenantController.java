@@ -4,6 +4,7 @@ import com.acueducto.veredal.tenants.application.TenantService;
 import com.acueducto.veredal.tenants.infrastructure.persistence.jpa.TenantEntity;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -20,6 +21,7 @@ public class TenantController {
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
+    @PreAuthorize("hasRole('ADMIN')")
     public TenantResponse create(@Valid @RequestBody CreateTenantRequest request) {
         return toResponse(service.create(request));
     }
@@ -35,11 +37,13 @@ public class TenantController {
     }
 
     @PutMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
     public TenantResponse update(@PathVariable String id, @Valid @RequestBody UpdateTenantRequest request) {
         return toResponse(service.update(id, request));
     }
 
     @PostMapping("/{id}/deactivate")
+    @PreAuthorize("hasRole('ADMIN')")
     public TenantResponse deactivate(@PathVariable String id) {
         return toResponse(service.deactivate(id));
     }

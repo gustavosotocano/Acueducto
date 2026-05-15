@@ -1,5 +1,9 @@
 package com.acueducto.veredal.support;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.testcontainers.containers.PostgreSQLContainer;
@@ -8,6 +12,21 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 
 @Testcontainers
 public abstract class IntegrationTestBase {
+
+    @Autowired
+    protected MockMvc mockMvc;
+
+    @Autowired
+    protected ObjectMapper objectMapper;
+
+    protected MockHttpServletRequestBuilder withTenantAuth(String tenantId, MockHttpServletRequestBuilder builder)
+            throws Exception {
+        return AuthTestSupport.withTenantAuth(mockMvc, objectMapper, tenantId, builder);
+    }
+
+    protected MockHttpServletRequestBuilder withPlatformAuth(MockHttpServletRequestBuilder builder) throws Exception {
+        return builder.header("Authorization", "Bearer " + AuthTestSupport.adminToken(mockMvc, objectMapper));
+    }
 
     @SuppressWarnings("resource")
     @Container

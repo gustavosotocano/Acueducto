@@ -5,6 +5,9 @@ import com.acueducto.veredal.shared.multitenancy.TenantNotFoundException;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.core.AuthenticationException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseStatus;
@@ -25,6 +28,18 @@ public class GlobalExceptionHandler {
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     public ApiError handleTenantNotFound(TenantNotFoundException ex, HttpServletRequest request) {
         return new ApiError(OffsetDateTime.now(), 400, "Bad Request", "TENANT_NOT_FOUND: " + ex.getMessage(), request.getRequestURI());
+    }
+
+    @ExceptionHandler({AuthenticationException.class, BadCredentialsException.class})
+    @ResponseStatus(HttpStatus.UNAUTHORIZED)
+    public ApiError handleAuthentication(AuthenticationException ex, HttpServletRequest request) {
+        return new ApiError(OffsetDateTime.now(), 401, "Unauthorized", ex.getMessage(), request.getRequestURI());
+    }
+
+    @ExceptionHandler(AccessDeniedException.class)
+    @ResponseStatus(HttpStatus.FORBIDDEN)
+    public ApiError handleAccessDenied(AccessDeniedException ex, HttpServletRequest request) {
+        return new ApiError(OffsetDateTime.now(), 403, "Forbidden", ex.getMessage(), request.getRequestURI());
     }
 
     @ExceptionHandler(IllegalArgumentException.class)

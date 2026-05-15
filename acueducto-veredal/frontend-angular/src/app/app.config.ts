@@ -4,6 +4,7 @@ import { provideRouter } from '@angular/router';
 import { provideAnimations } from '@angular/platform-browser/animations';
 
 import { routes } from './app.routes';
+import { httpAuthInterceptor } from './shared/api/http-auth.interceptor';
 import { httpTenantInterceptor } from './shared/api/http-tenant.interceptor';
 
 export const appConfig: ApplicationConfig = {
@@ -11,6 +12,6 @@ export const appConfig: ApplicationConfig = {
     provideBrowserGlobalErrorListeners(),
     provideAnimations(),
     provideRouter(routes),
-    provideHttpClient(withInterceptors([httpTenantInterceptor])),
+    provideHttpClient(withInterceptors([httpAuthInterceptor, httpTenantInterceptor])),
   ],
 };

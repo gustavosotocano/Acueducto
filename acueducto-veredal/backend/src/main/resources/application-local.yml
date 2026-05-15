@@ -25,3 +25,9 @@ server:
 app:
   multitenancy:
     header-name: X-Tenant-Id
+  security:
+    jwt:
+      secret: dev-only-change-me-acueducto-veredal-jwt-secret-32chars-min
+      expiration-hours: 12
+    password-reset:
+      expiration-hours: 24

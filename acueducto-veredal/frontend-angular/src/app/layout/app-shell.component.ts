@@ -10,6 +10,8 @@ import { MatSidenav, MatSidenavModule } from '@angular/material/sidenav';
 import { MatToolbarModule } from '@angular/material/toolbar';
 import { NavigationEnd, Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { filter, map, shareReplay, startWith } from 'rxjs';
+import { AuthService } from '../core/auth/auth.service';
+import { AuthStore } from '../core/auth/auth.store';
 import { TenantStore } from '../core/tenant/tenant.store';
 import { TenantsService } from '../tenants/tenants.service';
 import { catchError, of } from 'rxjs';
@@ -51,7 +53,7 @@ type NavItem = {
         </div>
 
         <mat-nav-list>
-          @for (item of nav; track item.path) {
+          @for (item of visibleNav(); track item.path) {
             <a
               mat-list-item
               [routerLink]="item.path"
@@ -76,28 +78,41 @@ type NavItem = {
           <span class="toolbar-title">{{ currentTitle$ | async }}</span>
           <span class="spacer"></span>
 
-          <button mat-button [matMenuTriggerFor]="tenantMenu">
-            <mat-icon>apartment</mat-icon>
-            <span>{{ activeTenantLabel() }}</span>
-          </button>
-          <mat-menu #tenantMenu="matMenu">
-            <button mat-menu-item [routerLink]="'/tenants'">
-              <mat-icon>settings</mat-icon>
-              <span>Administrar tenants</span>
+          @if (authStore.user(); as user) {
+            <span class="user-label">{{ user.fullName }} · {{ user.role }}</span>
+          }
+
+          @if (canSwitchTenant()) {
+            <button mat-button [matMenuTriggerFor]="tenantMenu">
+              <mat-icon>apartment</mat-icon>
+              <span>{{ activeTenantLabel() }}</span>
             </button>
-            <mat-divider />
-            @for (t of tenants$ | async; track t.id) {
-              <button mat-menu-item (click)="selectTenant(t.id)">
-                <mat-icon>{{ tenantId() === t.id ? 'check' : 'apartment' }}</mat-icon>
-                <span>{{ t.tenantName }}</span>
+            <mat-menu #tenantMenu="matMenu">
+              <button mat-menu-item [routerLink]="'/tenants'">
+                <mat-icon>settings</mat-icon>
+                <span>Administrar tenants</span>
               </button>
-            }
-            <mat-divider />
-            <button mat-menu-item (click)="clearTenant()">
-              <mat-icon>close</mat-icon>
-              <span>Limpiar selección</span>
-            </button>
-          </mat-menu>
+              <mat-divider />
+              @for (t of tenants$ | async; track t.id) {
+                <button mat-menu-item (click)="selectTenant(t.id)">
+                  <mat-icon>{{ tenantId() === t.id ? 'check' : 'apartment' }}</mat-icon>
+                  <span>{{ t.tenantName }}</span>
+                </button>
+              }
+              <mat-divider />
+              <button mat-menu-item (click)="clearTenant()">
+                <mat-icon>close</mat-icon>
+                <span>Limpiar selección</span>
+              </button>
+            </mat-menu>
+          } @else {
+            <span class="tenant-readonly">{{ activeTenantLabel() }}</span>
+          }
+
+          <button mat-button type="button" (click)="logout()">
+            <mat-icon>logout</mat-icon>
+            Salir
+          </button>
         </mat-toolbar>
 
         <div class="page">
@@ -115,9 +130,12 @@ export class AppShellComponent {
   private readonly router = inject(Router);
   private readonly tenantStore = inject(TenantStore);
   private readonly tenantsService = inject(TenantsService);
+  protected readonly authStore = inject(AuthStore);
+  private readonly authService = inject(AuthService);
 
-  protected readonly nav: NavItem[] = [
+  private readonly allNav: NavItem[] = [
     { label: 'Tenants', icon: 'apartment', path: '/tenants' },
+    { label: 'Usuarios', icon: 'manage_accounts', path: '/users' },
     { label: 'Owners', icon: 'person', path: '/owners' },
     { label: 'Properties', icon: 'home_work', path: '/properties' },
     { label: 'Water rights', icon: 'water_drop', path: '/water-rights' },
@@ -126,6 +144,19 @@ export class AppShellComponent {
     { label: 'Payments', icon: 'payments', path: '/payments' },
     { label: 'Portfolio', icon: 'account_balance', path: '/portfolio' },
   ];
+
+  protected visibleNav(): NavItem[] {
+    return this.allNav.filter((item) => {
+      if (item.path === '/tenants') return this.authStore.canManageTenants();
+      if (item.path === '/users') return this.authStore.hasRole('ADMIN');
+      if (item.path === '/payments') return this.authStore.canRegisterPayments();
+      return true;
+    });
+  }
+
+  protected canSwitchTenant() {
+    return this.authStore.canManageTenants();
+  }
 
   protected readonly isDesktop$ = this.breakpointObserver.observe('(min-width: 1000px)').pipe(
     map((r) => r.matches),
@@ -137,7 +168,7 @@ export class AppShellComponent {
     startWith(null),
     map(() => {
       const url = this.router.url.split('?')[0];
-      const match = this.nav.find((n) => n.path === url);
+      const match = this.allNav.find((n) => n.path === url);
       return match?.label ?? 'Acueducto Veredal';
     }),
     shareReplay({ bufferSize: 1, refCount: true }),
@@ -169,6 +200,11 @@ export class AppShellComponent {
 
   toggleMobileNav() {
     this.sidenav?.toggle();
+  }
+
+  logout() {
+    this.authService.logout();
+    void this.router.navigateByUrl('/login');
   }
 }
 

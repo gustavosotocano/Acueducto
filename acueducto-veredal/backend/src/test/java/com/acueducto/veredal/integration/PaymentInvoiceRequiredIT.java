@@ -24,13 +24,6 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
 class PaymentInvoiceRequiredIT extends IntegrationTestBase {
-
-    @Autowired
-    MockMvc mockMvc;
-
-    @Autowired
-    ObjectMapper objectMapper;
-
     @Test
     void paymentRequiresInvoiceId() throws Exception {
         String tenant = "tenant_rf059_missing_invoice";
@@ -44,10 +37,9 @@ class PaymentInvoiceRequiredIT extends IntegrationTestBase {
                 }
                 """;
 
-        mockMvc.perform(post("/api/v1/payments")
-                        .header("X-Tenant-Id", tenant)
+        mockMvc.perform(withTenantAuth(tenant, post("/api/v1/payments")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(payload))
+                        .content(payload)))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.message", is("invoiceId must not be null")));
     }
@@ -66,10 +58,9 @@ class PaymentInvoiceRequiredIT extends IntegrationTestBase {
                 }
                 """.formatted(UUID.randomUUID());
 
-        mockMvc.perform(post("/api/v1/payments")
-                        .header("X-Tenant-Id", tenant)
+        mockMvc.perform(withTenantAuth(tenant, post("/api/v1/payments")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(payload))
+                        .content(payload)))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.message", is("Invoice not found")));
     }
@@ -94,10 +85,9 @@ class PaymentInvoiceRequiredIT extends IntegrationTestBase {
                 }
                 """.formatted(invoiceId);
 
-        mockMvc.perform(post("/api/v1/payments")
-                        .header("X-Tenant-Id", tenant)
+        mockMvc.perform(withTenantAuth(tenant, post("/api/v1/payments")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(payload))
+                        .content(payload)))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.invoiceId", is(invoiceId.toString())))
                 .andExpect(jsonPath("$.waterRightId", is(waterRightId.toString())))
@@ -141,10 +131,9 @@ class PaymentInvoiceRequiredIT extends IntegrationTestBase {
                 }
                 """.formatted(invoiceId);
 
-        mockMvc.perform(post("/api/v1/payments")
-                        .header("X-Tenant-Id", tenant)
+        mockMvc.perform(withTenantAuth(tenant, post("/api/v1/payments")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(payload))
+                        .content(payload)))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.message", is("Payment amount exceeds invoice outstanding balance")));
     }
@@ -160,10 +149,9 @@ class PaymentInvoiceRequiredIT extends IntegrationTestBase {
                 }
                 """.formatted(invoiceId, paymentDate, amount, method);
 
-        mockMvc.perform(post("/api/v1/payments")
-                        .header("X-Tenant-Id", tenant)
+        mockMvc.perform(withTenantAuth(tenant, post("/api/v1/payments")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(payload))
+                        .content(payload)))
                 .andExpect(status().isCreated());
     }
 
@@ -175,7 +163,7 @@ class PaymentInvoiceRequiredIT extends IntegrationTestBase {
                 null,
                 null
         ));
-        mockMvc.perform(post("/api/v1/tenants")
+        mockMvc.perform(withPlatformAuth(post("/api/v1/tenants"))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(body))
                 .andExpect(status().isCreated());
@@ -190,10 +178,9 @@ class PaymentInvoiceRequiredIT extends IntegrationTestBase {
                 "3000000000",
                 "ana.lopez@example.com"
         ));
-        String body = mockMvc.perform(post("/api/v1/owners")
-                        .header("X-Tenant-Id", tenant)
+        String body = mockMvc.perform(withTenantAuth(tenant, post("/api/v1/owners")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(payload))
+                        .content(payload)))
                 .andExpect(status().isCreated())
                 .andReturn()
                 .getResponse()
@@ -209,10 +196,9 @@ class PaymentInvoiceRequiredIT extends IntegrationTestBase {
                 ownerId,
                 LocalDate.of(2026, 1, 1)
         ));
-        String body = mockMvc.perform(post("/api/v1/properties")
-                        .header("X-Tenant-Id", tenant)
+        String body = mockMvc.perform(withTenantAuth(tenant, post("/api/v1/properties")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(payload))
+                        .content(payload)))
                 .andExpect(status().isCreated())
                 .andReturn()
                 .getResponse()
@@ -231,10 +217,9 @@ class PaymentInvoiceRequiredIT extends IntegrationTestBase {
                 new BigDecimal("25000.00"),
                 LocalDate.of(2026, 1, 1)
         ));
-        String body = mockMvc.perform(post("/api/v1/water-rights")
-                        .header("X-Tenant-Id", tenant)
+        String body = mockMvc.perform(withTenantAuth(tenant, post("/api/v1/water-rights")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(payload))
+                        .content(payload)))
                 .andExpect(status().isCreated())
                 .andReturn()
                 .getResponse()
@@ -253,10 +238,9 @@ class PaymentInvoiceRequiredIT extends IntegrationTestBase {
                 new BigDecimal("25000.00"),
                 null
         ));
-        String body = mockMvc.perform(post("/api/v1/invoices")
-                        .header("X-Tenant-Id", tenant)
+        String body = mockMvc.perform(withTenantAuth(tenant, post("/api/v1/invoices")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(payload))
+                        .content(payload)))
                 .andExpect(status().isCreated())
                 .andReturn()
                 .getResponse()
