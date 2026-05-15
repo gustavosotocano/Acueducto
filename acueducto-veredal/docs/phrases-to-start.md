@@ -2,6 +2,8 @@
 
 Este documento define frases cortas para disparar procesos con el agente, sin depender de memoria.
 
+Flujo completo: [`docs/sdlc.md`](./sdlc.md).
+
 ### Convenciones
 - Reemplaza `<xxx>` por el número de RF (ej: `065`).
 - Reemplaza `#<n>` por el número de PR o issue.
@@ -15,8 +17,8 @@ Este documento define frases cortas para disparar procesos con el agente, sin de
 - **Dev: toma la RF-<xxx>**
   - Crea rama `rf-<xxx>-...`
   - Mueve la historia de `Ready` → `In progress`
-  - Implementa, corre tests/build/lints relevantes
-  - Crea PR y mueve la historia a `In review`
+  - Implementa; antes del PR ejecuta `./scripts/ci.sh` (ver `docs/sdlc.md`)
+  - Crea PR (plantilla con QA scope / test plan / pasos QA) y mueve la historia a `In review`
 
 - **Dev: crea PR para RF-<xxx>**
   - (Si ya existe rama) crea el PR con plantilla (Summary / QA scope / Test plan / Pasos QA)
@@ -24,7 +26,7 @@ Este documento define frases cortas para disparar procesos con el agente, sin de
 
 - **Dev: aplica fixes del PR #<n>**
   - Trabaja sobre la rama del PR
-  - Empuja commits de corrección y deja CI en verde
+  - Empuja commits de corrección y vuelve a ejecutar `./scripts/ci.sh` en verde
 
 - **Dev: mergea el PR #<n> (si QA aprobó)**
   - Merge por defecto: **Squash**

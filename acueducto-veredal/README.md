@@ -48,11 +48,13 @@ Digitalizar y organizar la operación del acueducto veredal mediante una platafo
 
 ## Documentación inicial
 
+- `docs/sdlc.md` — flujo de desarrollo, QA y verificaciones (`./scripts/ci.sh`)
+- `docs/phrases-to-start.md` — frases para operar con el agente
 - `docs/01-vision.md`
 - `docs/05-business-rules.md`
 - `docs/06-domain-model.md`
-- `docs/08-user-stories.md`
 - `docs/13-mvp-backlog.md`
+- `docs/acueducto-veredal-requerimientos.md`
 
 ## Roadmap
 

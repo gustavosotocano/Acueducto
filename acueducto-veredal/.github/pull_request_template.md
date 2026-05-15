@@ -1,14 +1,44 @@
-## Qué cambia
+## Summary
+<!-- Qué se hizo (1–3 oraciones). Historia: RF-XXX / issue # -->
 
-## Por qué cambia
+## QA scope
+<!-- Marca uno: API | Frontend | Both -->
 
-## Cómo fue probado
+- [ ] API
+- [ ] Frontend
+- [ ] Both
+
+## Test plan (dev)
+<!-- Qué probaste en desarrollo. Incluye comando si aplica: `./scripts/ci.sh backend|frontend|all` -->
+
+- [ ] Ejecuté `./scripts/ci.sh` (o el scope correspondiente) y pasó en verde
+- [ ] Caso principal de la RF
+- [ ] Casos borde relevantes
+- [ ] Regresión mínima del módulo afectado
+
+## Pasos para QA
+<!-- Pasos concretos que QA debe ejecutar (URLs, pantallas, headers, datos de prueba) -->
+
+1.
+2.
+
+## Criterios de aceptación
+<!-- Checklist verificable copiado/adaptado del issue RF -->
+
+- [ ]
+- [ ]
+
+## Referencias
+<!-- Issue RF/bug, endpoints, pantallas -->
+
+- Historia / RF:
+- Endpoints:
+- Pantallas:
 
 ## Impacto funcional
 
-## Checklist
+## Checklist técnico
 - [ ] Cambié documentación si aplica
-- [ ] Revisé reglas de negocio impactadas
+- [ ] Revisé reglas de negocio impactadas (`docs/05-business-rules.md`)
 - [ ] Consideré aislamiento multitenant
 - [ ] Consideré trazabilidad/auditoría
-- [ ] Probé el caso principal
