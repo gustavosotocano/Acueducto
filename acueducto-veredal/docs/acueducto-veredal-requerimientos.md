@@ -372,6 +372,9 @@ Refactor de consultas de cartera desacopladas del JPA de facturas. Detalle: [sto
 ## RNF-016. Puertos waterrights ↔ owners / properties
 Refactor del núcleo `water_right` desacoplado de owners y predios. Detalle: [stories/RNF-016-waterrights-owners-properties-ports.md](stories/RNF-016-waterrights-owners-properties-ports.md) · Issue [#32](https://github.com/gustavosotocano/Acueducto/issues/32).
 
+## RNF-017. Virtual threads y contexto de tenant
+Habilitar virtual threads en Spring Boot (`spring.threads.virtual.enabled`) y reemplazar `ThreadLocal` en `TenantContext` por `ScopedValue` para evitar problemas de memoria y contexto con alto volumen de hilos virtuales. Detalle: [stories/RNF-017-virtual-threads-and-tenant-context.md](stories/RNF-017-virtual-threads-and-tenant-context.md) · Issue [#33](https://github.com/gustavosotocano/Acueducto/issues/33).
+
 ---
 
 ## 5. Reglas de negocio importantes

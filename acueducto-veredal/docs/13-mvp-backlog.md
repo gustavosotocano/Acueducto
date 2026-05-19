@@ -72,3 +72,5 @@
   - [stories/RNF-015-portfolio-invoices-interests-ports.md](stories/RNF-015-portfolio-invoices-interests-ports.md)
 - **RNF-016** — Puertos `waterrights` ↔ `owners` / `properties` — [#32](https://github.com/gustavosotocano/Acueducto/issues/32)
   - [stories/RNF-016-waterrights-owners-properties-ports.md](stories/RNF-016-waterrights-owners-properties-ports.md)
+- **RNF-017** — Virtual threads + `ScopedValue` para `TenantContext` — [#33](https://github.com/gustavosotocano/Acueducto/issues/33)
+  - [stories/RNF-017-virtual-threads-and-tenant-context.md](stories/RNF-017-virtual-threads-and-tenant-context.md)
