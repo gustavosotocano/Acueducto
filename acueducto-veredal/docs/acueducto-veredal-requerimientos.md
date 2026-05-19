@@ -358,6 +358,20 @@ La aplicación debe contar con pruebas base de integración.
 ## RNF-012. Tests con entorno realista
 Las pruebas de persistencia e integración deben apoyarse en **Testcontainers + PostgreSQL**.
 
+## RNF-013. Fronteras entre módulos del backend
+Los módulos del monolito no deben importar `infrastructure.persistence.jpa` de otros módulos. Los cruces entre dominios deben hacerse mediante **puertos** (interfaces en capa `application`) y DTOs/snapshots de aplicación, con adaptadores JPA en el módulo proveedor de datos.
+
+Implementación incremental; caso piloto obligatorio: cruce `payments` ↔ `invoices`. Detalle: [stories/RNF-013-module-boundaries-and-ports.md](stories/RNF-013-module-boundaries-and-ports.md) · Issue [#29](https://github.com/gustavosotocano/Acueducto/issues/29).
+
+## RNF-014. Puertos invoices ↔ waterrights / tariffs
+Refactor del cruce de facturación con derechos de agua y tarifas. Detalle: [stories/RNF-014-invoices-waterrights-tariffs-ports.md](stories/RNF-014-invoices-waterrights-tariffs-ports.md) · Issue [#30](https://github.com/gustavosotocano/Acueducto/issues/30).
+
+## RNF-015. Puertos portfolio ↔ invoices / interests
+Refactor de consultas de cartera desacopladas del JPA de facturas. Detalle: [stories/RNF-015-portfolio-invoices-interests-ports.md](stories/RNF-015-portfolio-invoices-interests-ports.md) · Issue [#31](https://github.com/gustavosotocano/Acueducto/issues/31).
+
+## RNF-016. Puertos waterrights ↔ owners / properties
+Refactor del núcleo `water_right` desacoplado de owners y predios. Detalle: [stories/RNF-016-waterrights-owners-properties-ports.md](stories/RNF-016-waterrights-owners-properties-ports.md) · Issue [#32](https://github.com/gustavosotocano/Acueducto/issues/32).
+
 ---
 
 ## 5. Reglas de negocio importantes

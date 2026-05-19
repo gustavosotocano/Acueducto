@@ -62,3 +62,13 @@
 - OTP por correo
 - Gestión de roles
 - Auditoría de acciones críticas
+
+## Epic 11. Arquitectura backend (habilitadores)
+- **RNF-013** — Fronteras entre módulos: piloto `payments` ↔ `invoices` — [#29](https://github.com/gustavosotocano/Acueducto/issues/29)
+  - [stories/RNF-013-module-boundaries-and-ports.md](stories/RNF-013-module-boundaries-and-ports.md)
+- **RNF-014** — Puertos `invoices` ↔ `waterrights` / `tariffs` — [#30](https://github.com/gustavosotocano/Acueducto/issues/30)
+  - [stories/RNF-014-invoices-waterrights-tariffs-ports.md](stories/RNF-014-invoices-waterrights-tariffs-ports.md)
+- **RNF-015** — Puertos `portfolio` ↔ `invoices` / `interests` — [#31](https://github.com/gustavosotocano/Acueducto/issues/31)
+  - [stories/RNF-015-portfolio-invoices-interests-ports.md](stories/RNF-015-portfolio-invoices-interests-ports.md)
+- **RNF-016** — Puertos `waterrights` ↔ `owners` / `properties` — [#32](https://github.com/gustavosotocano/Acueducto/issues/32)
+  - [stories/RNF-016-waterrights-owners-properties-ports.md](stories/RNF-016-waterrights-owners-properties-ports.md)
