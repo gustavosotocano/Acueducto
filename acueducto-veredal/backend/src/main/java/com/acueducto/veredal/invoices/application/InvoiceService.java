@@ -1,13 +1,13 @@
 package com.acueducto.veredal.invoices.application;
 
+import com.acueducto.veredal.invoices.application.port.ApplicableTariffSnapshot;
+import com.acueducto.veredal.invoices.application.port.ConnectionTariffLookupPort;
+import com.acueducto.veredal.invoices.application.port.WaterRightBillingPort;
+import com.acueducto.veredal.invoices.application.port.WaterRightBillingSnapshot;
 import com.acueducto.veredal.invoices.infrastructure.persistence.jpa.InvoiceEntity;
 import com.acueducto.veredal.invoices.infrastructure.persistence.jpa.InvoiceRepository;
 import com.acueducto.veredal.invoices.interfaces.rest.controller.CreateInvoiceRequest;
 import com.acueducto.veredal.shared.multitenancy.TenantContext;
-import com.acueducto.veredal.tariffs.infrastructure.persistence.jpa.ConnectionTariffRepository;
-import com.acueducto.veredal.waterrights.infrastructure.persistence.jpa.WaterRightEntity;
-import com.acueducto.veredal.waterrights.infrastructure.persistence.jpa.WaterRightRepository;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -22,23 +22,22 @@ import java.util.UUID;
 public class InvoiceService {
 
     private final InvoiceRepository invoiceRepository;
-    private final WaterRightRepository waterRightRepository;
-    private final ConnectionTariffRepository connectionTariffRepository;
+    private final WaterRightBillingPort waterRightBillingPort;
+    private final ConnectionTariffLookupPort connectionTariffLookupPort;
 
     public InvoiceService(
             InvoiceRepository invoiceRepository,
-            WaterRightRepository waterRightRepository,
-            ConnectionTariffRepository connectionTariffRepository
+            WaterRightBillingPort waterRightBillingPort,
+            ConnectionTariffLookupPort connectionTariffLookupPort
     ) {
         this.invoiceRepository = invoiceRepository;
-        this.waterRightRepository = waterRightRepository;
-        this.connectionTariffRepository = connectionTariffRepository;
+        this.waterRightBillingPort = waterRightBillingPort;
+        this.connectionTariffLookupPort = connectionTariffLookupPort;
     }
 
     public InvoiceEntity create(CreateInvoiceRequest request) {
         String tenantId = TenantContext.getRequiredTenantId();
-        WaterRightEntity waterRight = waterRightRepository.findByIdAndTenantId(request.waterRightId(), tenantId)
-                .orElseThrow(() -> new IllegalArgumentException("Water right not found"));
+        WaterRightBillingSnapshot waterRight = waterRightBillingPort.findForBilling(tenantId, request.waterRightId());
 
         validateDates(request.periodStart(), request.periodEnd(), request.issueDate(), request.dueDate());
 
@@ -48,8 +47,8 @@ public class InvoiceService {
         InvoiceEntity invoice = new InvoiceEntity();
         invoice.setId(UUID.randomUUID());
         invoice.setTenantId(tenantId);
-        invoice.setWaterRightId(waterRight.getId());
-        invoice.setOwnerId(waterRight.getOwnerId());
+        invoice.setWaterRightId(waterRight.id());
+        invoice.setOwnerId(waterRight.ownerId());
         invoice.setInvoiceNumber(request.invoiceNumber());
         invoice.setStatus("ISSUED");
         invoice.setPeriodStart(request.periodStart());
@@ -122,20 +121,11 @@ public class InvoiceService {
         }
     }
 
-    private BigDecimal computeTotalAmount(WaterRightEntity waterRight, LocalDate issueDate, BigDecimal requested) {
-        // RF-065: amount from connection_tariff valid on issueDate; tie-break: latest validFrom (see repository order).
+    private BigDecimal computeTotalAmount(WaterRightBillingSnapshot waterRight, LocalDate issueDate, BigDecimal requested) {
         String tenantId = TenantContext.getRequiredTenantId();
-        var applicable = connectionTariffRepository
-                .findApplicable(tenantId, waterRight.getConnectionType(), issueDate, PageRequest.of(0, 1))
-                .stream()
-                .findFirst();
-        if (applicable.isPresent()) {
-            return applicable.get().getAmount();
-        }
-        if (requested != null) {
-            return requested;
-        }
-        return waterRight.getBaseTariff();
+        return connectionTariffLookupPort
+                .findApplicable(tenantId, waterRight.connectionType(), issueDate)
+                .map(ApplicableTariffSnapshot::amount)
+                .orElseGet(() -> requested != null ? requested : waterRight.baseTariff());
     }
 }
-

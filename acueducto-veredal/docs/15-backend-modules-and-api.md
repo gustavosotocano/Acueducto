@@ -26,7 +26,9 @@ Regla de dependencias entre módulos `A` → `B`:
 
 **Piloto (RNF-013):** `payments` consume facturas vía `InvoicePaymentPort` (`payments/application/port`). La implementación JPA está en `invoices/infrastructure/payment/InvoicePaymentJpaAdapter`. `PaymentService` no importa `invoices.infrastructure.*`.
 
-Rollout pendiente: RNF-014 (`invoices`↔`waterrights`/`tariffs`), RNF-015 (`portfolio`), RNF-016 (`waterrights`↔`owners`/`properties`).
+**RNF-014:** `invoices` consulta derechos y tarifas vía `WaterRightBillingPort` y `ConnectionTariffLookupPort` (`invoices/application/port`). Adaptadores: `waterrights/infrastructure/billing`, `tariffs/infrastructure/billing`. `InvoiceService` y `MonthlyInvoiceBatchService` sin imports `waterrights.infrastructure.*` ni `tariffs.infrastructure.*`.
+
+Rollout pendiente: RNF-015 (`portfolio`), RNF-016 (`waterrights`↔`owners`/`properties`).
 
 ---
 
