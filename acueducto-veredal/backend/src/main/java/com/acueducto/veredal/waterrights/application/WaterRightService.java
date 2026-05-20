@@ -1,8 +1,8 @@
 package com.acueducto.veredal.waterrights.application;
 
-import com.acueducto.veredal.owners.infrastructure.persistence.jpa.OwnerRepository;
-import com.acueducto.veredal.properties.infrastructure.persistence.jpa.PropertyRepository;
 import com.acueducto.veredal.shared.multitenancy.TenantContext;
+import com.acueducto.veredal.waterrights.application.port.OwnerLookupPort;
+import com.acueducto.veredal.waterrights.application.port.PropertyLookupPort;
 import com.acueducto.veredal.waterrights.application.transfer.WaterRightTransferService;
 import com.acueducto.veredal.waterrights.infrastructure.persistence.jpa.WaterRightEntity;
 import com.acueducto.veredal.waterrights.infrastructure.persistence.jpa.WaterRightRepository;
@@ -16,25 +16,24 @@ import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.UUID;
 
-
 @Service
 @Transactional
 public class WaterRightService {
 
     private final WaterRightRepository waterRightRepository;
-    private final OwnerRepository ownerRepository;
-    private final PropertyRepository propertyRepository;
+    private final OwnerLookupPort ownerLookupPort;
+    private final PropertyLookupPort propertyLookupPort;
     private final WaterRightTransferService waterRightTransferService;
 
     public WaterRightService(
             WaterRightRepository waterRightRepository,
-            OwnerRepository ownerRepository,
-            PropertyRepository propertyRepository,
+            OwnerLookupPort ownerLookupPort,
+            PropertyLookupPort propertyLookupPort,
             WaterRightTransferService waterRightTransferService
     ) {
         this.waterRightRepository = waterRightRepository;
-        this.ownerRepository = ownerRepository;
-        this.propertyRepository = propertyRepository;
+        this.ownerLookupPort = ownerLookupPort;
+        this.propertyLookupPort = propertyLookupPort;
         this.waterRightTransferService = waterRightTransferService;
     }
 
@@ -43,12 +42,8 @@ public class WaterRightService {
         if (waterRightRepository.existsByTenantIdAndRightCode(tenantId, request.rightCode())) {
             throw new IllegalArgumentException("Water right code already exists in this tenant");
         }
-        if (ownerRepository.findByIdAndTenantId(request.ownerId(), tenantId).isEmpty()) {
-            throw new IllegalArgumentException("Owner does not exist in this tenant");
-        }
-        if (propertyRepository.findByIdAndTenantId(request.propertyId(), tenantId).isEmpty()) {
-            throw new IllegalArgumentException("Property does not exist in this tenant");
-        }
+        ownerLookupPort.requireForWaterRight(tenantId, request.ownerId());
+        propertyLookupPort.requireForWaterRight(tenantId, request.propertyId());
 
         OffsetDateTime now = OffsetDateTime.now();
         WaterRightEntity entity = new WaterRightEntity();
@@ -84,9 +79,7 @@ public class WaterRightService {
 
     public WaterRightEntity update(UUID id, UpdateWaterRightRequest request) {
         String tenantId = TenantContext.getRequiredTenantId();
-        if (propertyRepository.findByIdAndTenantId(request.propertyId(), tenantId).isEmpty()) {
-            throw new IllegalArgumentException("Property does not exist in this tenant");
-        }
+        propertyLookupPort.requireForWaterRight(tenantId, request.propertyId());
 
         WaterRightEntity entity = findById(id);
         entity.setPropertyId(request.propertyId());

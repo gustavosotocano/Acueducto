@@ -1,8 +1,8 @@
 package com.acueducto.veredal.waterrights.application.transfer;
 
-import com.acueducto.veredal.owners.infrastructure.persistence.jpa.OwnerEntity;
-import com.acueducto.veredal.owners.infrastructure.persistence.jpa.OwnerRepository;
 import com.acueducto.veredal.shared.multitenancy.TenantContext;
+import com.acueducto.veredal.waterrights.application.port.OwnerLookupPort;
+import com.acueducto.veredal.waterrights.application.port.OwnerSnapshot;
 import com.acueducto.veredal.waterrights.infrastructure.persistence.jpa.WaterRightEntity;
 import com.acueducto.veredal.waterrights.infrastructure.persistence.jpa.WaterRightRepository;
 import com.acueducto.veredal.waterrights.infrastructure.persistence.jpa.history.WaterRightOwnerHistoryEntity;
@@ -21,26 +21,26 @@ import java.util.UUID;
 public class WaterRightTransferService {
 
     private final WaterRightRepository waterRightRepository;
-    private final OwnerRepository ownerRepository;
+    private final OwnerLookupPort ownerLookupPort;
     private final WaterRightOwnerHistoryRepository waterRightOwnerHistoryRepository;
 
     public WaterRightTransferService(
             WaterRightRepository waterRightRepository,
-            OwnerRepository ownerRepository,
+            OwnerLookupPort ownerLookupPort,
             WaterRightOwnerHistoryRepository waterRightOwnerHistoryRepository
     ) {
         this.waterRightRepository = waterRightRepository;
-        this.ownerRepository = ownerRepository;
+        this.ownerLookupPort = ownerLookupPort;
         this.waterRightOwnerHistoryRepository = waterRightOwnerHistoryRepository;
     }
 
     public WaterRightEntity transfer(UUID waterRightId, TransferWaterRightRequest request) {
         String tenantId = TenantContext.getRequiredTenantId();
         WaterRightEntity waterRight = getWaterRight(tenantId, waterRightId);
-        OwnerEntity newOwner = getOwner(tenantId, request.newOwnerId());
+        OwnerSnapshot newOwner = ownerLookupPort.requireForWaterRight(tenantId, request.newOwnerId());
 
         validateTransferRequest(waterRight, request.transferDate());
-        if (waterRight.getOwnerId().equals(newOwner.getId())) {
+        if (waterRight.getOwnerId().equals(newOwner.id())) {
             throw new IllegalArgumentException("Water right already belongs to the provided owner");
         }
 
@@ -49,10 +49,10 @@ public class WaterRightTransferService {
                 .orElseThrow(() -> new IllegalStateException("Active owner history was not found for water right"));
 
         closeCurrentHistory(activeHistory, request.transferDate());
-        createNewHistory(tenantId, waterRightId, newOwner.getId(), request.transferDate(), request.transferReason(), request.notes());
+        createNewHistory(tenantId, waterRightId, newOwner.id(), request.transferDate(), request.transferReason(), request.notes());
 
         OffsetDateTime now = OffsetDateTime.now();
-        waterRight.setOwnerId(newOwner.getId());
+        waterRight.setOwnerId(newOwner.id());
         waterRight.setOwnershipStartDate(request.transferDate());
         waterRight.setOwnershipEndDate(null);
         waterRight.setUpdatedAt(now);
@@ -80,11 +80,6 @@ public class WaterRightTransferService {
     private WaterRightEntity getWaterRight(String tenantId, UUID waterRightId) {
         return waterRightRepository.findByIdAndTenantId(waterRightId, tenantId)
                 .orElseThrow(() -> new IllegalArgumentException("Water right not found"));
-    }
-
-    private OwnerEntity getOwner(String tenantId, UUID ownerId) {
-        return ownerRepository.findByIdAndTenantId(ownerId, tenantId)
-                .orElseThrow(() -> new IllegalArgumentException("Owner does not exist in this tenant"));
     }
 
     private void validateTransferRequest(WaterRightEntity waterRight, LocalDate transferDate) {
