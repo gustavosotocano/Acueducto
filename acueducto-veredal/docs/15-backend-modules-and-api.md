@@ -30,7 +30,7 @@ Regla de dependencias entre módulos `A` → `B`:
 
 **RNF-015:** `portfolio` lee cartera vía `PortfolioReadPort` (`portfolio/application/port`). Queries nativas en `invoices/infrastructure/portfolio`; `portfolio` sin `invoices.infrastructure.*`.
 
-Rollout pendiente: RNF-016 (`waterrights`↔`owners`/`properties`).
+**RNF-016:** `waterrights` valida owners y predios vía `OwnerLookupPort` y `PropertyLookupPort` (`waterrights/application/port`). Adaptadores en `owners/infrastructure/lookup` y `properties/infrastructure/lookup`.
 
 ---
 
