@@ -1,7 +1,9 @@
 package com.acueducto.veredal.portfolio.interfaces.rest.controller;
 
 import com.acueducto.veredal.portfolio.application.PortfolioService;
-import com.acueducto.veredal.portfolio.infrastructure.persistence.jpa.PortfolioRepository;
+import com.acueducto.veredal.portfolio.application.port.OwnerBalanceSnapshot;
+import com.acueducto.veredal.portfolio.application.port.OverdueBucketSnapshot;
+import com.acueducto.veredal.portfolio.application.port.WaterRightBalanceSnapshot;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -38,34 +40,34 @@ public class PortfolioController {
         return portfolioService.overdueSummaryWithInterest().stream().map(this::toOverdueWithInterestResponse).toList();
     }
 
-    private WaterRightBalanceResponse toWaterRightResponse(PortfolioRepository.WaterRightBalanceRow row) {
+    private WaterRightBalanceResponse toWaterRightResponse(WaterRightBalanceSnapshot row) {
         return new WaterRightBalanceResponse(
-                row.getWaterRightId(),
-                row.getOwnerId(),
-                row.getBilledAmount(),
-                row.getPaidAmount(),
-                row.getOutstandingAmount()
+                row.waterRightId(),
+                row.ownerId(),
+                row.billedAmount(),
+                row.paidAmount(),
+                row.outstandingAmount()
         );
     }
 
-    private OwnerBalanceResponse toOwnerResponse(PortfolioRepository.OwnerBalanceRow row) {
+    private OwnerBalanceResponse toOwnerResponse(OwnerBalanceSnapshot row) {
         return new OwnerBalanceResponse(
-                row.getOwnerId(),
-                row.getBilledAmount(),
-                row.getPaidAmount(),
-                row.getOutstandingAmount()
+                row.ownerId(),
+                row.billedAmount(),
+                row.paidAmount(),
+                row.outstandingAmount()
         );
     }
 
-    private OverdueBucketResponse toOverdueResponse(PortfolioRepository.OverdueBucketRow row) {
+    private OverdueBucketResponse toOverdueResponse(OverdueBucketSnapshot row) {
         return new OverdueBucketResponse(
-                row.getBucket(),
-                row.getInvoiceCount(),
-                row.getOutstandingAmount()
+                row.bucket(),
+                row.invoiceCount(),
+                row.outstandingAmount()
         );
     }
 
-    private OverdueBucketWithInterestResponse toOverdueWithInterestResponse(com.acueducto.veredal.portfolio.application.PortfolioService.OverdueBucketWithInterestRow row) {
+    private OverdueBucketWithInterestResponse toOverdueWithInterestResponse(PortfolioService.OverdueBucketWithInterestRow row) {
         return new OverdueBucketWithInterestResponse(
                 row.bucket,
                 row.invoiceCount,
@@ -75,4 +77,3 @@ public class PortfolioController {
         );
     }
 }
-
