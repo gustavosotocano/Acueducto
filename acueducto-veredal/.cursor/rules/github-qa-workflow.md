@@ -10,7 +10,12 @@ Esta regla define cómo operar cuando una historia llega a **`In review`** en el
 ---
 
 ## 1) Entrada a `In review` (handoff)
-QA solo empieza cuando el PR tiene **code review aprobado** (GitHub Approve de un revisor distinto al autor, o comentario `CODE REVIEW PASS` documentado en equipo pequeño).
+QA solo empieza cuando:
+
+1. La card del issue está en **`In review`** en GitHub Project #7 (dev la mueve tras code review aprobado).
+2. El PR tiene **code review aprobado** (GitHub Approve de un revisor distinto al autor, o comentario `CODE REVIEW PASS` documentado en equipo pequeño).
+
+**No iniciar QA** si la card sigue en `Code review` o `In progress`.
 
 Cuando desarrollo mueva una historia a `In review`, el PR debe incluir obligatoriamente:
 - **Summary** (qué se hizo)

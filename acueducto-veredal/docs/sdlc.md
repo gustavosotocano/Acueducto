@@ -26,7 +26,21 @@ Flujo de desarrollo, calidad y entrega. Pensado para operar con **GitHub Project
 - No mover a **`In review`** (QA) hasta: CI verde + **code review aprobado**.
 - La historia permanece en **`In review`** hasta **QA PASS** y merge.
 - Si hay bugs de QA, issues aparte en `Ready`; no pasar a `Done` con bugs abiertos de esa entrega.
-- Si code review pide cambios, el PR vuelve a **`In progress`** (o permanece ahí) hasta re-review.
+- Si code review pide cambios, mover la card de vuelta a **`In progress`** hasta re-review y volver a **`Code review`**.
+
+## Movimiento obligatorio de la card (GitHub Project #7)
+
+Cada transición de trabajo va acompañada de **mover la card/issue en el Project** al estado correspondiente. No dejar la card en un estado anterior mientras el trabajo ya avanzó.
+
+| Momento | Quién | Estado en el Project | Condición |
+|---------|-------|----------------------|-----------|
+| Al **tomar** la historia (`Dev: toma la RF-XXX`) | Dev | **`Ready` → `In progress`** | Primera acción al iniciar; antes o al crear la rama |
+| Al **terminar desarrollo** y abrir PR (CI verde, plantilla completa) | Dev | **`In progress` → `Code review`** | PR abierto y listo para revisión |
+| Tras **code review OK** (`Approve` o `CODE REVIEW PASS`) | Dev / revisor | **`Code review` → `In review`** | Solo si el PR está aprobado en código; handoff a QA |
+| Si code review pide cambios | Dev | **`Code review` → `In progress`** | Hasta corregir y volver a solicitar review |
+| Tras **QA PASS** + merge squash | Dev | **`In review` → `Done`** | Issue cerrado y verificación post-merge |
+
+**Importante:** `In review` en el board = **QA**, no code review. No saltar `Code review` ni mover a `In review` sin aprobación de código documentada en el PR.
 
 ## Verificación de código (portable)
 

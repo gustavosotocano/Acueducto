@@ -13,15 +13,19 @@ Cuando el usuario diga “tomemos la RF-XXX y desarrollemosla” (o “tomemos l
   - Nombre sugerido: `rf-XXX-<slug-corto>` (ej: `rf-055-consecutivo-factura`)
 - Abrir **PR** hacia la rama principal del repo (la que corresponda: `main`/`master`).
 
-### Cambios de estado en el Project (automatizar en el flujo)
-1. Al iniciar trabajo:
-   - Mover la historia a **`In progress`**.
-2. Al abrir PR con CI verde y revisor asignado:
-   - Mover a **`Code review`**.
-3. Tras **Approve** de code review (revisor ≠ autor):
-   - Mover a **`In review`** (handoff a QA).
-4. Tras merge y verificación:
-   - Mover a **`Done`**.
+### Cambios de estado en el Project (obligatorio en cada paso)
+
+El agente o dev **debe mover la card** en GitHub Project #7 al cambiar de fase. No es opcional.
+
+| Paso | Transición | Cuándo |
+|------|------------|--------|
+| 1 | **`Ready` → `In progress`** | Al tomar la historia (`Dev: toma la RF-XXX`): primera acción, junto con crear la rama |
+| 2 | **`In progress` → `Code review`** | Al terminar dev: PR abierto, `./scripts/ci.sh` verde, plantilla del PR completa |
+| 3 | **`Code review` → `In review`** | Solo tras code review aprobado (`Approve` o `CODE REVIEW PASS` en el PR) — handoff a QA |
+| 3b | **`Code review` → `In progress`** | Si hay **Request changes**; volver a paso 2 cuando se reenvíe |
+| 4 | **`In review` → `Done`** | Tras **QA PASS** + merge squash + issue cerrado |
+
+**No mover a `In review` sin code review aprobado.** `In review` = QA, no revisión de código.
 
 ### Calidad
 - **`Code review`**: revisión del diff (diseño, tests, multitenant). Salida: **Approve** o **Request changes** en GitHub.

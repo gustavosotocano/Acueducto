@@ -15,26 +15,29 @@ Flujo completo: [`docs/sdlc.md`](./sdlc.md).
 ## Dev (desarrollo)
 
 - **Dev: toma la RF-<xxx>**
-  - Crea rama `rf-<xxx>-...`
-  - Mueve la historia de `Ready` → `In progress`
-  - Implementa; antes del PR ejecuta `./scripts/ci.sh` (ver `docs/sdlc.md`)
-  - Crea PR (plantilla completa) y mueve la historia a `Code review`
+  - **Obligatorio:** mover card en Project #7 de `Ready` → `In progress` (al iniciar)
+  - `git pull` de `main`; crear rama `rf-<xxx>-...`
+  - Implementar; antes del PR ejecutar `./scripts/ci.sh` (ver `docs/sdlc.md`)
+  - Al abrir PR (plantilla completa, CI verde): **mover card** `In progress` → `Code review`
 
 - **Dev: crea PR para RF-<xxx>**
-  - (Si ya existe rama) crea el PR con plantilla (Summary / QA scope / test plan / Pasos QA)
-  - Solicita revisor; historia en `Code review`
+  - (Si ya existe rama) crear PR con plantilla (Summary / QA scope / test plan / Pasos QA)
+  - **Obligatorio:** mover card a `Code review` (no dejar en `In progress`)
 
 - **Dev: revisa el PR #<n>**
   - Code review: diff, arquitectura, tests, multitenant
-  - **Approve** o **Request changes**; si OK, mover historia a `In review` para QA
+  - **Approve** o **Request changes**
+  - Si OK: **mover card** `Code review` → `In review` (handoff QA)
+  - Si cambios: **mover card** `Code review` → `In progress` hasta re-review
 
 - **Dev: aplica fixes del PR #<n>**
-  - Trabaja sobre la rama del PR
-  - Empuja commits de corrección y vuelve a ejecutar `./scripts/ci.sh` en verde
+  - Card en `In progress` (si salió de code review con cambios)
+  - Trabajar sobre la rama del PR; `./scripts/ci.sh` en verde
+  - Al reenviar: mover card otra vez a `Code review`
 
 - **Dev: mergea el PR #<n> (si QA aprobó)**
   - Merge por defecto: **Squash**
-  - Mueve la historia a `Done`
+  - **Obligatorio:** mover card `In review` → `Done`
 
 ---
 

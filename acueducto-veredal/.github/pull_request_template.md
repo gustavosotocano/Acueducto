@@ -1,6 +1,13 @@
 ## Summary
 <!-- Qué se hizo (1–3 oraciones). Historia: RF-XXX / issue # -->
 
+## Estado en GitHub Project #7
+<!-- Dev: actualizar la card al abrir este PR -->
+
+- [ ] Card en **`Code review`** (viene de `In progress` al terminar desarrollo)
+- [ ] Tras code review aprobado → mover a **`In review`** (QA)
+- [ ] Tras QA PASS + merge → **`Done`**
+
 ## Code review (antes de QA)
 <!-- Revisor: marcar cuando el diff esté listo. QA no empieza hasta esta sección aprobada. -->
 
