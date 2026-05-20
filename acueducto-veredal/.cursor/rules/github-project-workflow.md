@@ -4,7 +4,7 @@ Cuando el usuario diga “tomemos la RF-XXX y desarrollemosla” (o “tomemos l
 
 ### Project
 - **Project**: `gustavosotocano` Project **#7**
-- **Estados**: `Ready` → `In progress` → `In review` → `Done`
+- **Estados**: `Ready` → `In progress` → `Code review` → `In review` → `Done`
 - Se **inicia** tomando ítems que estén en **`Ready`**.
 
 ### Branching y PR
@@ -16,17 +16,21 @@ Cuando el usuario diga “tomemos la RF-XXX y desarrollemosla” (o “tomemos l
 ### Cambios de estado en el Project (automatizar en el flujo)
 1. Al iniciar trabajo:
    - Mover la historia a **`In progress`**.
-2. Al abrir PR listo para revisión:
-   - Mover a **`In review`**.
-3. Tras merge y verificación:
+2. Al abrir PR con CI verde y revisor asignado:
+   - Mover a **`Code review`**.
+3. Tras **Approve** de code review (revisor ≠ autor):
+   - Mover a **`In review`** (handoff a QA).
+4. Tras merge y verificación:
    - Mover a **`Done`**.
 
 ### Calidad
-- **`In review` es etapa de QA / Calidad**: a partir de ahí el área de calidad ejecuta pruebas y valida criterios de aceptación.
-- Antes de pasar a `In review` (responsabilidad de desarrollo):
-  - ejecutar `./scripts/ci.sh` con el scope adecuado (`backend` | `frontend` | `all`) según QA scope del PR
-  - completar la plantilla del PR: **test plan (dev)**, **pasos para QA**, **criterios de aceptación**, **QA scope**
-- No hacer **merge** hasta tener **aprobación de QA** (y revisión técnica si aplica).
+- **`Code review`**: revisión del diff (diseño, tests, multitenant). Salida: **Approve** o **Request changes** en GitHub.
+- **`In review` es solo QA / Calidad**: empieza **después** de code review aprobado.
+- Antes de `Code review` (dev):
+  - ejecutar `./scripts/ci.sh` con el scope adecuado (`backend` | `frontend` | `all`)
+  - completar plantilla del PR: **test plan (dev)**, **pasos para QA**, **criterios de aceptación**, **QA scope**
+- No mover a **`In review`** sin code review aprobado.
+- No hacer **merge** hasta **code review aprobado** + **QA PASS**.
 - La historia **permanece en `In review`** hasta QA PASS + merge; no pasar a `Done` con bugs abiertos de esa entrega.
 
 ### Revisión y comentarios

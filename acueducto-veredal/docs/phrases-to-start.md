@@ -7,7 +7,7 @@ Flujo completo: [`docs/sdlc.md`](./sdlc.md).
 ### Convenciones
 - Reemplaza `<xxx>` por el número de RF (ej: `065`).
 - Reemplaza `#<n>` por el número de PR o issue.
-- Estados del Project #7: `Ready` → `In progress` → `In review` → `Done`.
+- Estados del Project #7: `Ready` → `In progress` → `Code review` → `In review` → `Done`.
 - **QA scope** define dónde se prueba: `API` | `Frontend` | `Both`.
 
 ---
@@ -18,11 +18,15 @@ Flujo completo: [`docs/sdlc.md`](./sdlc.md).
   - Crea rama `rf-<xxx>-...`
   - Mueve la historia de `Ready` → `In progress`
   - Implementa; antes del PR ejecuta `./scripts/ci.sh` (ver `docs/sdlc.md`)
-  - Crea PR (plantilla con QA scope / test plan / pasos QA) y mueve la historia a `In review`
+  - Crea PR (plantilla completa) y mueve la historia a `Code review`
 
 - **Dev: crea PR para RF-<xxx>**
-  - (Si ya existe rama) crea el PR con plantilla (Summary / QA scope / Test plan / Pasos QA)
-  - Mueve la historia a `In review`
+  - (Si ya existe rama) crea el PR con plantilla (Summary / QA scope / test plan / Pasos QA)
+  - Solicita revisor; historia en `Code review`
+
+- **Dev: revisa el PR #<n>**
+  - Code review: diff, arquitectura, tests, multitenant
+  - **Approve** o **Request changes**; si OK, mover historia a `In review` para QA
 
 - **Dev: aplica fixes del PR #<n>**
   - Trabaja sobre la rama del PR
@@ -42,6 +46,7 @@ Flujo completo: [`docs/sdlc.md`](./sdlc.md).
   - `Both`: combina UI + validaciones puntuales por API.
 
 - **QA: valida el PR #<n>**
+  - Solo si el PR ya tiene **code review aprobado** (Approve o `CODE REVIEW PASS`)
   - Ejecuta smoke + pruebas funcionales + regresión (según módulo)
   - Si pasa: deja **QA PASS** (Approve si es posible; si eres el autor del PR, deja comentario)
   - Si falla: reporta bugs (1 issue por bug)

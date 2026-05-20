@@ -1,6 +1,16 @@
 ## Summary
 <!-- Qué se hizo (1–3 oraciones). Historia: RF-XXX / issue # -->
 
+## Code review (antes de QA)
+<!-- Revisor: marcar cuando el diff esté listo. QA no empieza hasta esta sección aprobada. -->
+
+- [ ] `./scripts/ci.sh` verde (dev)
+- [ ] Cambio acotado a la RF / sin scope creep innecesario
+- [ ] Multitenant, reglas de negocio y tests revisados
+- [ ] **Approve** en GitHub (revisor ≠ autor) — o `CODE REVIEW PASS (self)` si equipo de 1 persona
+
+**Revisor:** @<!-- mencionar cuenta GitHub -->
+
 ## QA scope
 <!-- Marca uno: API | Frontend | Both -->
 

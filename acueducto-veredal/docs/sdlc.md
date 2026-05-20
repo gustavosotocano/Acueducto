@@ -4,20 +4,33 @@ Flujo de desarrollo, calidad y entrega. Pensado para operar con **GitHub Project
 
 ## Estados del board
 
-`Ready` → `In progress` → `In review` → `Done`
+`Ready` → `In progress` → `Code review` → `In review` → `Done`
 
 | Estado | Responsable | Qué ocurre |
 |--------|-------------|------------|
 | Ready | — | Historia priorizada, lista para tomar |
-| In progress | Dev | Rama `rf-XXX-<slug>`, implementación |
-| In review | QA | PR abierto; pruebas funcionales y regresión |
-| Done | Dev (post-merge) | QA aprobó, PR mergeado (squash) |
+| In progress | Dev | Rama `rf-XXX-<slug>`, implementación, PR abierto, `./scripts/ci.sh` en verde |
+| Code review | Dev (revisor) | Revisión del **diff** en GitHub: diseño, reglas de negocio, multitenant, tests; **Approve** o **Request changes** |
+| In review | QA | Solo después de **code review aprobado**; pruebas funcionales y regresión |
+| Done | Dev (post-merge) | **QA PASS** + PR mergeado (squash) |
 
-**Regla:** la historia permanece en `In review` hasta **QA PASS** y merge. Si hay bugs, se crean issues aparte en `Ready`; no mover la RF a `Done` con bugs abiertos de esa entrega.
+### Dos revisiones distintas (no mezclar)
+
+| Tipo | Pregunta que responde | Cuándo | Señal de salida |
+|------|----------------------|--------|-----------------|
+| **Code review** | ¿El código está bien escrito, coherente y mantenible? | **Antes** de QA | ≥1 **Approve** en el PR (quien no sea el autor) o checklist explícito si equipo de 1 persona |
+| **QA** | ¿El producto cumple la RF y no rompe regresión? | **Después** de code review | Comentario **QA PASS** (o Approve si aplica) + merge |
+
+**Reglas:**
+
+- No mover a **`In review`** (QA) hasta: CI verde + **code review aprobado**.
+- La historia permanece en **`In review`** hasta **QA PASS** y merge.
+- Si hay bugs de QA, issues aparte en `Ready`; no pasar a `Done` con bugs abiertos de esa entrega.
+- Si code review pide cambios, el PR vuelve a **`In progress`** (o permanece ahí) hasta re-review.
 
 ## Verificación de código (portable)
 
-Antes de pasar una historia a `In review`, ejecutar según el alcance:
+Antes de solicitar **code review**, el dev ejecuta según el alcance:
 
 ```bash
 ./scripts/ci.sh all          # backend + frontend
@@ -69,6 +82,23 @@ pipelines:
 
 En ambos casos el contrato es el mismo: **el pipeline llama al script**, no duplica comandos.
 
+## Code review (antes de QA)
+
+Checklist mínimo del revisor (GitHub **Files changed** + comentarios):
+
+- [ ] El cambio responde a la RF/issue (sin scope creep innecesario)
+- [ ] `./scripts/ci.sh` verde (o pipeline equivalente)
+- [ ] Convenciones del repo (multitenant, soft delete, trazabilidad si aplica)
+- [ ] Tests cubren el comportamiento nuevo o regresión relevante
+- [ ] Sin secretos, sin `console.log` / código muerto evidente
+- [ ] Documentación actualizada si cambió contrato o arquitectura
+
+**En GitHub:** usar **Review → Approve** o **Request changes**. Si hay cambios, el dev pushea en la misma rama y se repite code review.
+
+**Equipo de una persona:** hacer auto-revisión con la checklist en el PR y dejar comentario `CODE REVIEW PASS (self)` antes de pasar a QA; idealmente usar agente (`Dev: revisa el PR #n`) como segunda pasada.
+
+**Handoff a QA:** mover la historia a **`In review`** solo cuando el PR tenga aprobación de código (o `CODE REVIEW PASS` documentado).
+
 ## Pull request (handoff a QA)
 
 La plantilla en `.github/pull_request_template.md` exige:
@@ -80,7 +110,7 @@ La plantilla en `.github/pull_request_template.md` exige:
 - **Criterios de aceptación** (checklist)
 - Referencias (issue RF, endpoints, pantallas)
 
-**No merge** sin aprobación de QA. Si el autor del PR es quien hace QA, dejar comentario **QA PASS** o **QA FAIL** (GitHub no permite auto-aprobación).
+**No merge** sin **code review aprobado** + **QA PASS**. Si el autor del PR es quien hace QA, dejar comentario **QA PASS** o **QA FAIL** (GitHub no permite auto-aprobación).
 
 ## Bugs
 
@@ -100,7 +130,8 @@ La plantilla en `.github/pull_request_template.md` exige:
 Ver [`phrases-to-start.md`](./phrases-to-start.md) — ejemplos:
 
 - `Dev: toma la RF-065`
-- `QA: valida el PR #10`
+- `Dev: revisa el PR #10` (code review)
+- `QA: valida el PR #10` (solo después de code review)
 - `QA: reporta bugs (severidad: major) del PR #10`
 
 ## Reglas Cursor (referencia)
