@@ -1,46 +1,51 @@
 package com.acueducto.veredal.portfolio.application;
 
 import com.acueducto.veredal.interests.application.InterestPolicyService;
-import com.acueducto.veredal.portfolio.infrastructure.persistence.jpa.PortfolioRepository;
+import com.acueducto.veredal.portfolio.application.port.OverdueInvoiceSnapshot;
+import com.acueducto.veredal.portfolio.application.port.OwnerBalanceSnapshot;
+import com.acueducto.veredal.portfolio.application.port.OverdueBucketSnapshot;
+import com.acueducto.veredal.portfolio.application.port.PortfolioReadPort;
+import com.acueducto.veredal.portfolio.application.port.WaterRightBalanceSnapshot;
 import com.acueducto.veredal.shared.multitenancy.TenantContext;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
-import java.util.List;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 
 @Service
 @Transactional(readOnly = true)
 public class PortfolioService {
 
-    private final PortfolioRepository portfolioRepository;
+    private final PortfolioReadPort portfolioReadPort;
     private final InterestPolicyService interestPolicyService;
 
-    public PortfolioService(PortfolioRepository portfolioRepository, InterestPolicyService interestPolicyService) {
-        this.portfolioRepository = portfolioRepository;
+    public PortfolioService(PortfolioReadPort portfolioReadPort, InterestPolicyService interestPolicyService) {
+        this.portfolioReadPort = portfolioReadPort;
         this.interestPolicyService = interestPolicyService;
     }
 
-    public List<PortfolioRepository.WaterRightBalanceRow> outstandingByWaterRight() {
-        return portfolioRepository.findOutstandingByWaterRight(TenantContext.getRequiredTenantId());
+    public List<WaterRightBalanceSnapshot> outstandingByWaterRight() {
+        return portfolioReadPort.findOutstandingByWaterRight(TenantContext.getRequiredTenantId());
     }
 
-    public List<PortfolioRepository.OwnerBalanceRow> outstandingByOwner() {
-        return portfolioRepository.findOutstandingByOwner(TenantContext.getRequiredTenantId());
+    public List<OwnerBalanceSnapshot> outstandingByOwner() {
+        return portfolioReadPort.findOutstandingByOwner(TenantContext.getRequiredTenantId());
     }
 
-    public List<PortfolioRepository.OverdueBucketRow> overdueSummary() {
-        return portfolioRepository.findOverdueSummary(TenantContext.getRequiredTenantId());
+    public List<OverdueBucketSnapshot> overdueSummary() {
+        return portfolioReadPort.findOverdueSummary(TenantContext.getRequiredTenantId());
     }
 
     public List<OverdueBucketWithInterestRow> overdueSummaryWithInterest() {
         String tenantId = TenantContext.getRequiredTenantId();
         boolean interestEnabled = interestPolicyService.isEnabled();
-        List<PortfolioRepository.OverdueInvoiceRow> overdue = portfolioRepository.findOverdueInvoices(tenantId);
+        List<OverdueInvoiceSnapshot> overdue = portfolioReadPort.findOverdueInvoices(tenantId);
 
         Map<String, OverdueBucketWithInterestRow> buckets = new LinkedHashMap<>();
         buckets.put("0-30", new OverdueBucketWithInterestRow("0-30"));
@@ -49,18 +54,19 @@ public class PortfolioService {
         buckets.put(">90", new OverdueBucketWithInterestRow(">90"));
 
         LocalDate today = LocalDate.now();
-        for (PortfolioRepository.OverdueInvoiceRow row : overdue) {
-            int days = (int) ChronoUnit.DAYS.between(row.getDueDate(), today);
+        for (OverdueInvoiceSnapshot row : overdue) {
+            int days = (int) ChronoUnit.DAYS.between(row.dueDate(), today);
             String bucket = bucketForDays(days);
             OverdueBucketWithInterestRow acc = buckets.get(bucket);
 
-            BigDecimal outstanding = row.getOutstandingAmount();
+            BigDecimal outstanding = row.outstandingAmount();
             acc.invoiceCount++;
             acc.outstandingAmount = acc.outstandingAmount.add(outstanding);
 
             if (interestEnabled) {
                 BigDecimal ratePercent = interestPolicyService.resolveRatePercent(days);
-                BigDecimal interest = outstanding.multiply(ratePercent).divide(new BigDecimal("100"), 2, java.math.RoundingMode.HALF_UP);
+                BigDecimal interest = outstanding.multiply(ratePercent)
+                        .divide(new BigDecimal("100"), 2, RoundingMode.HALF_UP);
                 acc.interestAmount = acc.interestAmount.add(interest);
             }
         }
@@ -90,4 +96,3 @@ public class PortfolioService {
         }
     }
 }
-

@@ -28,7 +28,9 @@ Regla de dependencias entre módulos `A` → `B`:
 
 **RNF-014:** `invoices` consulta derechos y tarifas vía `WaterRightBillingPort` y `ConnectionTariffLookupPort` (`invoices/application/port`). Adaptadores: `waterrights/infrastructure/billing`, `tariffs/infrastructure/billing`. `InvoiceService` y `MonthlyInvoiceBatchService` sin imports `waterrights.infrastructure.*` ni `tariffs.infrastructure.*`.
 
-Rollout pendiente: RNF-015 (`portfolio`), RNF-016 (`waterrights`↔`owners`/`properties`).
+**RNF-015:** `portfolio` lee cartera vía `PortfolioReadPort` (`portfolio/application/port`). Queries nativas en `invoices/infrastructure/portfolio`; `portfolio` sin `invoices.infrastructure.*`.
+
+Rollout pendiente: RNF-016 (`waterrights`↔`owners`/`properties`).
 
 ---
 

@@ -1,4 +1,4 @@
-package com.acueducto.veredal.portfolio.infrastructure.persistence.jpa;
+package com.acueducto.veredal.invoices.infrastructure.portfolio;
 
 import com.acueducto.veredal.invoices.infrastructure.persistence.jpa.InvoiceEntity;
 import org.springframework.data.jpa.repository.Query;
@@ -8,33 +8,48 @@ import org.springframework.data.repository.query.Param;
 import java.util.List;
 import java.util.UUID;
 
-public interface PortfolioRepository extends Repository<InvoiceEntity, UUID> {
+/**
+ * Consultas nativas de cartera sobre tablas invoice/payment (solo módulo invoices).
+ */
+public interface PortfolioInvoiceReadRepository extends Repository<InvoiceEntity, UUID> {
 
     interface WaterRightBalanceRow {
         UUID getWaterRightId();
+
         UUID getOwnerId();
+
         java.math.BigDecimal getBilledAmount();
+
         java.math.BigDecimal getPaidAmount();
+
         java.math.BigDecimal getOutstandingAmount();
     }
 
     interface OwnerBalanceRow {
         UUID getOwnerId();
+
         java.math.BigDecimal getBilledAmount();
+
         java.math.BigDecimal getPaidAmount();
+
         java.math.BigDecimal getOutstandingAmount();
     }
 
     interface OverdueBucketRow {
         String getBucket();
+
         int getInvoiceCount();
+
         java.math.BigDecimal getOutstandingAmount();
+
         int getBucketSort();
     }
 
     interface OverdueInvoiceRow {
-        java.util.UUID getInvoiceId();
+        UUID getInvoiceId();
+
         java.time.LocalDate getDueDate();
+
         java.math.BigDecimal getOutstandingAmount();
     }
 
@@ -141,4 +156,3 @@ public interface PortfolioRepository extends Repository<InvoiceEntity, UUID> {
             """, nativeQuery = true)
     List<OverdueInvoiceRow> findOverdueInvoices(@Param("tenantId") String tenantId);
 }
-
