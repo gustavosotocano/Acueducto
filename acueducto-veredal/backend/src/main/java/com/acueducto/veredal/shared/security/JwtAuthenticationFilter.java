@@ -29,29 +29,39 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             FilterChain filterChain
     ) throws ServletException, IOException {
         String header = request.getHeader(HttpHeaders.AUTHORIZATION);
-        if (StringUtils.hasText(header) && header.startsWith("Bearer ")) {
-            String token = header.substring(7).trim();
-            try {
-                JwtTokenService.JwtUserClaims claims = jwtTokenService.parse(token);
-                AuthenticatedUser principal = new AuthenticatedUser(
-                        claims.userId(),
-                        claims.email(),
-                        claims.role(),
-                        claims.tenantId()
-                );
-                var authentication = new UsernamePasswordAuthenticationToken(
-                        principal,
-                        null,
-                        principal.getAuthorities()
-                );
-                SecurityContextHolder.getContext().setAuthentication(authentication);
+        if (!StringUtils.hasText(header) || !header.startsWith("Bearer ")) {
+            filterChain.doFilter(request, response);
+            return;
+        }
 
-                if (claims.tenantId() != null) {
-                    TenantContext.setTenantId(claims.tenantId());
+        String token = header.substring(7).trim();
+        try {
+            JwtTokenService.JwtUserClaims claims = jwtTokenService.parse(token);
+            AuthenticatedUser principal = new AuthenticatedUser(
+                    claims.userId(),
+                    claims.email(),
+                    claims.role(),
+                    claims.tenantId()
+            );
+            var authentication = new UsernamePasswordAuthenticationToken(
+                    principal,
+                    null,
+                    principal.getAuthorities()
+            );
+            SecurityContextHolder.getContext().setAuthentication(authentication);
+
+            if (claims.tenantId() != null && TenantContext.getTenantId().isEmpty()) {
+                try {
+                    TenantContext.runWithTenant(claims.tenantId(), () -> filterChain.doFilter(request, response));
+                } catch (ServletException | IOException e) {
+                    throw e;
+                } catch (Exception e) {
+                    throw new ServletException(e);
                 }
-            } catch (Exception ignored) {
-                SecurityContextHolder.clearContext();
+                return;
             }
+        } catch (Exception ignored) {
+            SecurityContextHolder.clearContext();
         }
 
         filterChain.doFilter(request, response);

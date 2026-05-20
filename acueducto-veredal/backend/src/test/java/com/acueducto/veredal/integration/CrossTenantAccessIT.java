@@ -29,6 +29,8 @@ class CrossTenantAccessIT extends IntegrationTestBase {
     void preventsCrossTenantAccessForProperty() throws Exception {
         String tenantA = "tenant_prop_a";
         String tenantB = "tenant_prop_b";
+        createTenant(tenantA);
+        createTenant(tenantB);
 
         UUID ownerA = createOwner(tenantA, "901", "Owner A");
         UUID propertyId = createProperty(tenantA, ownerA, "P-CA002-1");
@@ -67,6 +69,8 @@ class CrossTenantAccessIT extends IntegrationTestBase {
     void preventsCrossTenantAccessForWaterRight() throws Exception {
         String tenantA = "tenant_wr_a";
         String tenantB = "tenant_wr_b";
+        createTenant(tenantA);
+        createTenant(tenantB);
 
         UUID ownerA = createOwner(tenantA, "903", "Owner A");
         UUID propertyA = createProperty(tenantA, ownerA, "P-CA002-2");
@@ -109,13 +113,14 @@ class CrossTenantAccessIT extends IntegrationTestBase {
                 .andExpect(jsonPath("$.message", is("Water right not found")));
     }
 
-    private UUID createOwner(String tenant, String documentNumber, String fullName) throws Exception {
+    private UUID createOwner(String tenant, String documentNumber, String firstName) throws Exception {
         String payload = objectMapper.writeValueAsString(new OwnerPayload(
                 "CC",
                 documentNumber,
-                fullName,
+                firstName,
+                "Test",
                 "3000000000",
-                fullName.toLowerCase().replace(" ", ".") + "@example.com"
+                "owner." + documentNumber + "@example.com"
         ));
 
         String body = mockMvc.perform(withTenantAuth(tenant, post("/api/v1/owners")
@@ -175,7 +180,8 @@ class CrossTenantAccessIT extends IntegrationTestBase {
     private record OwnerPayload(
             String documentType,
             String documentNumber,
-            String fullName,
+            String firstName,
+            String lastName,
             String phone,
             String email
     ) {

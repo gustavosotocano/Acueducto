@@ -27,6 +27,7 @@ class PropertyUpdateDeactivateIT extends IntegrationTestBase {
     @Test
     void updateAndDeactivateProperty() throws Exception {
         String tenant = "tenant_prop_update";
+        createTenant(tenant);
 
         UUID ownerId = createOwner(tenant, "701", "Owner Prop");
         UUID propertyId = createProperty(tenant, ownerId, LocalDate.of(2026, 1, 1));
@@ -54,13 +55,14 @@ class PropertyUpdateDeactivateIT extends IntegrationTestBase {
                 .andExpect(jsonPath("$.status", is("INACTIVE")));
     }
 
-    private UUID createOwner(String tenant, String documentNumber, String fullName) throws Exception {
+    private UUID createOwner(String tenant, String documentNumber, String firstName) throws Exception {
         String payload = objectMapper.writeValueAsString(new OwnerPayload(
                 "CC",
                 documentNumber,
-                fullName,
+                firstName,
+                "Test",
                 "3000000000",
-                fullName.toLowerCase().replace(" ", ".") + "@example.com"
+                "owner." + documentNumber + "@example.com"
         ));
 
         String body = mockMvc.perform(withTenantAuth(tenant, post("/api/v1/owners")
@@ -97,7 +99,8 @@ class PropertyUpdateDeactivateIT extends IntegrationTestBase {
     private record OwnerPayload(
             String documentType,
             String documentNumber,
-            String fullName,
+            String firstName,
+            String lastName,
             String phone,
             String email
     ) {

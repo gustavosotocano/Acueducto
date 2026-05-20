@@ -28,6 +28,7 @@ class WaterRightUpdateDeactivateIT extends IntegrationTestBase {
     @Test
     void updateAndDeactivateWaterRight() throws Exception {
         String tenant = "tenant_wr_update";
+        createTenant(tenant);
 
         UUID ownerId = createOwner(tenant, "801", "Owner WR");
         UUID property1Id = createProperty(tenant, ownerId, "P1-" + ownerId.toString().substring(0, 6));
@@ -69,13 +70,14 @@ class WaterRightUpdateDeactivateIT extends IntegrationTestBase {
                 .andExpect(jsonPath("$.ownershipEndDate", is(endDate.toString())));
     }
 
-    private UUID createOwner(String tenant, String documentNumber, String fullName) throws Exception {
+    private UUID createOwner(String tenant, String documentNumber, String firstName) throws Exception {
         String payload = objectMapper.writeValueAsString(new OwnerPayload(
                 "CC",
                 documentNumber,
-                fullName,
+                firstName,
+                "Test",
                 "3000000000",
-                fullName.toLowerCase().replace(" ", ".") + "@example.com"
+                "owner." + documentNumber + "@example.com"
         ));
 
         String body = mockMvc.perform(withTenantAuth(tenant, post("/api/v1/owners")
@@ -135,7 +137,8 @@ class WaterRightUpdateDeactivateIT extends IntegrationTestBase {
     private record OwnerPayload(
             String documentType,
             String documentNumber,
-            String fullName,
+            String firstName,
+            String lastName,
             String phone,
             String email
     ) {

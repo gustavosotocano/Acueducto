@@ -79,17 +79,4 @@ class ConnectionTariffOverlapIT extends IntegrationTestBase {
                 .andExpect(status().isNotFound());
     }
 
-    private void createTenant(String id) throws Exception {
-        String payload = objectMapper.writeValueAsString(new CreateTenantRequest(
-                id,
-                "Tenant " + id,
-                null,
-                null,
-                null
-        ));
-        mockMvc.perform(withPlatformAuth(post("/api/v1/tenants"))
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(payload))
-                .andExpect(status().isCreated());
-    }
 }

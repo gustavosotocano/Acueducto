@@ -1,16 +1,22 @@
 package com.acueducto.veredal.support;
 
+import com.acueducto.veredal.tenants.interfaces.rest.controller.CreateTenantRequest;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
+import org.springframework.http.MediaType;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
+import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
 import org.testcontainers.containers.PostgreSQLContainer;
-import org.testcontainers.junit.jupiter.Container;
-import org.testcontainers.junit.jupiter.Testcontainers;
 
-@Testcontainers
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+
+/**
+ * One PostgreSQL container for the whole test JVM so Spring contexts do not keep
+ * a JDBC URL pointing at a container that was already stopped by another test class.
+ */
 public abstract class IntegrationTestBase {
 
     @Autowired
@@ -18,6 +24,16 @@ public abstract class IntegrationTestBase {
 
     @Autowired
     protected ObjectMapper objectMapper;
+
+    @SuppressWarnings("resource")
+    private static final PostgreSQLContainer<?> POSTGRES = new PostgreSQLContainer<>("postgres:16-alpine")
+            .withDatabaseName("acueducto_test")
+            .withUsername("acueducto_user")
+            .withPassword("acueducto_pass");
+
+    static {
+        POSTGRES.start();
+    }
 
     protected MockHttpServletRequestBuilder withTenantAuth(String tenantId, MockHttpServletRequestBuilder builder)
             throws Exception {
@@ -28,12 +44,19 @@ public abstract class IntegrationTestBase {
         return builder.header("Authorization", "Bearer " + AuthTestSupport.adminToken(mockMvc, objectMapper));
     }
 
-    @SuppressWarnings("resource")
-    @Container
-    static final PostgreSQLContainer<?> POSTGRES = new PostgreSQLContainer<>("postgres:16-alpine")
-            .withDatabaseName("acueducto_test")
-            .withUsername("acueducto_user")
-            .withPassword("acueducto_pass");
+    protected void createTenant(String id) throws Exception {
+        String body = objectMapper.writeValueAsString(new CreateTenantRequest(
+                id,
+                "Tenant " + id,
+                null,
+                null,
+                null
+        ));
+        mockMvc.perform(withPlatformAuth(post("/api/v1/tenants"))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(body))
+                .andExpect(status().isCreated());
+    }
 
     @DynamicPropertySource
     static void registerDataSourceProperties(DynamicPropertyRegistry registry) {
@@ -48,4 +71,3 @@ public abstract class IntegrationTestBase {
         registry.add("spring.flyway.locations", () -> "classpath:db/migration");
     }
 }
-
