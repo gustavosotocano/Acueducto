@@ -4,24 +4,36 @@ import java.util.Optional;
 
 public final class TenantContext {
 
-    private static final ThreadLocal<String> CURRENT_TENANT = new ThreadLocal<>();
+    private static final ScopedValue<String> CURRENT_TENANT = ScopedValue.newInstance();
 
     private TenantContext() {
     }
 
-    public static void setTenantId(String tenantId) {
-        CURRENT_TENANT.set(tenantId);
-    }
-
     public static Optional<String> getTenantId() {
-        return Optional.ofNullable(CURRENT_TENANT.get());
+        return CURRENT_TENANT.isBound()
+                ? Optional.of(CURRENT_TENANT.get())
+                : Optional.empty();
     }
 
     public static String getRequiredTenantId() {
-        return getTenantId().orElseThrow(TenantRequiredException::new);
+        if (!CURRENT_TENANT.isBound()) {
+            throw new TenantRequiredException();
+        }
+        return CURRENT_TENANT.get();
     }
 
-    public static void clear() {
-        CURRENT_TENANT.remove();
+    /**
+     * Binds {@code tenantId} for the duration of {@code action} (e.g. servlet filter chain).
+     */
+    public static void runWithTenant(String tenantId, TenantScopedAction action) throws Exception {
+        ScopedValue.where(CURRENT_TENANT, tenantId).call(() -> {
+            action.run();
+            return null;
+        });
+    }
+
+    @FunctionalInterface
+    public interface TenantScopedAction {
+        void run() throws Exception;
     }
 }

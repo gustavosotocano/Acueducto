@@ -122,18 +122,5 @@ class OwnerMultitenancyIT extends IntegrationTestBase {
     ) {
     }
 
-    private void createTenant(String id) throws Exception {
-        String body = objectMapper.writeValueAsString(new CreateTenantRequest(
-                id,
-                "Tenant " + id,
-                null,
-                null,
-                null
-        ));
-        mockMvc.perform(withPlatformAuth(post("/api/v1/tenants"))
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(body))
-                .andExpect(status().isCreated());
-    }
 }
 

@@ -9,6 +9,8 @@ Referencia de la arquitectura modular del backend y catálogo de endpoints. Comp
 | Estilo | Monolito modular multitenant |
 | Patrón | Arquitectura hexagonal (por módulo) |
 | Stack | Spring Boot 3.3 · Java 21 · PostgreSQL · Flyway · JWT |
+| Concurrencia | Virtual threads (`spring.threads.virtual.enabled`) |
+| Contexto tenant | `ScopedValue` en `TenantContext` (preview en Java 21; `--enable-preview` en Maven) |
 | Aislamiento | `tenant_id` + header `X-Tenant-Id` |
 | Entidad central | `water_right` (derecho de agua) |
 

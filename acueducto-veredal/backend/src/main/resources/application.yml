@@ -3,3 +3,6 @@ spring:
     name: acueducto-veredal
   profiles:
     active: local
+  threads:
+    virtual:
+      enabled: true

@@ -90,20 +90,6 @@ class AuthRolesIT extends IntegrationTestBase {
                 .andExpect(status().isForbidden());
     }
 
-    private void createTenant(String id) throws Exception {
-        String body = objectMapper.writeValueAsString(new CreateTenantRequest(
-                id,
-                "Tenant " + id,
-                null,
-                null,
-                null
-        ));
-        mockMvc.perform(withPlatformAuth(post("/api/v1/tenants"))
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(body))
-                .andExpect(status().isCreated());
-    }
-
     private void seedUser(String email, String role) throws Exception {
         String payload = """
                 {

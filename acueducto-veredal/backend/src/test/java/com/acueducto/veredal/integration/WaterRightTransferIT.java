@@ -30,6 +30,7 @@ class WaterRightTransferIT extends IntegrationTestBase {
     @Test
     void transferMaintainsSameWaterRightAndWritesOwnerHistory() throws Exception {
         String tenant = "tenant_transfer";
+        createTenant(tenant);
 
         UUID owner1Id = createOwner(tenant, "101", "Owner One");
         UUID owner2Id = createOwner(tenant, "202", "Owner Two");
@@ -62,6 +63,7 @@ class WaterRightTransferIT extends IntegrationTestBase {
     @Test
     void deactivateRequiresOwnershipEndDate() throws Exception {
         String tenant = "tenant_deactivate";
+        createTenant(tenant);
 
         UUID ownerId = createOwner(tenant, "303", "Owner Three");
         UUID propertyId = createProperty(tenant, ownerId);
@@ -73,13 +75,14 @@ class WaterRightTransferIT extends IntegrationTestBase {
                 .andExpect(status().isBadRequest());
     }
 
-    private UUID createOwner(String tenant, String documentNumber, String fullName) throws Exception {
+    private UUID createOwner(String tenant, String documentNumber, String firstName) throws Exception {
         String payload = objectMapper.writeValueAsString(new OwnerPayload(
                 "CC",
                 documentNumber,
-                fullName,
+                firstName,
+                "Test",
                 "3000000000",
-                fullName.toLowerCase().replace(" ", ".") + "@example.com"
+                "owner." + documentNumber + "@example.com"
         ));
 
         String body = mockMvc.perform(withTenantAuth(tenant, post("/api/v1/owners")
@@ -140,7 +143,8 @@ class WaterRightTransferIT extends IntegrationTestBase {
     private record OwnerPayload(
             String documentType,
             String documentNumber,
-            String fullName,
+            String firstName,
+            String lastName,
             String phone,
             String email
     ) {

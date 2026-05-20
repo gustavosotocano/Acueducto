@@ -53,20 +53,6 @@ class MonthlyInvoiceBatchIT extends IntegrationTestBase {
                 .andExpect(jsonPath("$.skipped[0].reason", is("INVOICE_ALREADY_EXISTS_FOR_PERIOD")));
     }
 
-    private void createTenant(String id) throws Exception {
-        String body = objectMapper.writeValueAsString(new CreateTenantRequest(
-                id,
-                "Tenant " + id,
-                null,
-                null,
-                null
-        ));
-        mockMvc.perform(withPlatformAuth(post("/api/v1/tenants"))
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(body))
-                .andExpect(status().isCreated());
-    }
-
     private UUID createOwner(String tenant) throws Exception {
         String payload = objectMapper.writeValueAsString(new OwnerPayload(
                 "CC",

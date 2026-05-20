@@ -29,19 +29,24 @@ public class TenantHeaderFilter extends OncePerRequestFilter {
     protected void doFilterInternal(HttpServletRequest request,
                                     HttpServletResponse response,
                                     FilterChain filterChain) throws ServletException, IOException {
-        try {
-            String headerTenant = request.getHeader(headerName);
-            if (StringUtils.hasText(headerTenant)) {
-                String normalized = headerTenant.trim();
-                AuthenticatedUser user = SecurityUtils.currentUserOrNull();
-                if (user != null && user.getTenantId() != null && !user.getTenantId().equals(normalized)) {
-                    throw new IllegalArgumentException("Tenant header does not match authenticated user");
-                }
-                TenantContext.setTenantId(normalized);
-            }
+        String headerTenant = request.getHeader(headerName);
+        if (!StringUtils.hasText(headerTenant)) {
             filterChain.doFilter(request, response);
-        } finally {
-            TenantContext.clear();
+            return;
+        }
+
+        String normalized = headerTenant.trim();
+        AuthenticatedUser user = SecurityUtils.currentUserOrNull();
+        if (user != null && user.getTenantId() != null && !user.getTenantId().equals(normalized)) {
+            throw new IllegalArgumentException("Tenant header does not match authenticated user");
+        }
+
+        try {
+            TenantContext.runWithTenant(normalized, () -> filterChain.doFilter(request, response));
+        } catch (ServletException | IOException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new ServletException(e);
         }
     }
 }

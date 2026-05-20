@@ -28,6 +28,7 @@ class PropertyOwnerHistoryIT extends IntegrationTestBase {
     @Test
     void changeOwnerClosesPreviousHistoryAndOpensNewOne() throws Exception {
         String tenant = "tenant_property_history";
+        createTenant(tenant);
 
         UUID owner1Id = createOwner(tenant, "501", "Owner One");
         UUID owner2Id = createOwner(tenant, "502", "Owner Two");
@@ -69,13 +70,14 @@ class PropertyOwnerHistoryIT extends IntegrationTestBase {
                 .andExpect(jsonPath("$[1].endDate", is(changeDate.minusDays(1).toString())));
     }
 
-    private UUID createOwner(String tenant, String documentNumber, String fullName) throws Exception {
+    private UUID createOwner(String tenant, String documentNumber, String firstName) throws Exception {
         String payload = objectMapper.writeValueAsString(new OwnerPayload(
                 "CC",
                 documentNumber,
-                fullName,
+                firstName,
+                "Test",
                 "3000000000",
-                fullName.toLowerCase().replace(" ", ".") + "@example.com"
+                "owner." + documentNumber + "@example.com"
         ));
 
         String body = mockMvc.perform(withTenantAuth(tenant, post("/api/v1/owners")
@@ -112,7 +114,8 @@ class PropertyOwnerHistoryIT extends IntegrationTestBase {
     private record OwnerPayload(
             String documentType,
             String documentNumber,
-            String fullName,
+            String firstName,
+            String lastName,
             String phone,
             String email
     ) {
