@@ -16,6 +16,20 @@ Referencia de la arquitectura modular del backend y catálogo de endpoints. Comp
 
 ---
 
+## Fronteras entre módulos (puertos)
+
+Regla de dependencias entre módulos `A` → `B`:
+
+| Permitido | No permitido |
+|-----------|--------------|
+| `B.application`, `B.domain`, `shared.*` | `B.infrastructure.persistence.jpa.*`, `*Entity` de otro módulo |
+
+**Piloto (RNF-013):** `payments` consume facturas vía `InvoicePaymentPort` (`payments/application/port`). La implementación JPA está en `invoices/infrastructure/payment/InvoicePaymentJpaAdapter`. `PaymentService` no importa `invoices.infrastructure.*`.
+
+Rollout pendiente: RNF-014 (`invoices`↔`waterrights`/`tariffs`), RNF-015 (`portfolio`), RNF-016 (`waterrights`↔`owners`/`properties`).
+
+---
+
 ## Diagrama de módulos
 
 ```mermaid
