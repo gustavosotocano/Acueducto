@@ -2,6 +2,7 @@
 
 | Campo | Valor |
 |-------|-------|
+| **Issue** | https://github.com/gustavosotocano/Acueducto/issues/40 |
 | **ID** | RF-068 |
 | **Tipo** | Historia de usuario |
 | **Épica** | Seguridad · Gestión de tenants |

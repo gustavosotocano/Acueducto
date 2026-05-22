@@ -3,6 +3,7 @@ package com.acueducto.veredal.integration;
 import com.acueducto.veredal.auth.application.AuthDataInitializer;
 import com.acueducto.veredal.support.IntegrationTestBase;
 import com.acueducto.veredal.tenants.interfaces.rest.controller.CreateTenantRequest;
+import com.acueducto.veredal.tenants.interfaces.rest.controller.InitialPresidentRequest;
 import com.fasterxml.jackson.databind.JsonNode;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -30,8 +31,7 @@ class AuthRolesIT extends IntegrationTestBase {
         tenantId = "tenant_rf066_" + UUID.randomUUID().toString().substring(0, 8);
         presidentEmail = "presidente." + tenantId + "@test.local";
         treasuryEmail = "tesoreria." + tenantId + "@test.local";
-        createTenant(tenantId);
-        seedUser(presidentEmail, "PRESIDENT");
+        createTenant(tenantId, presidentEmail, "Presidente " + tenantId);
         seedUser(treasuryEmail, "TREASURY");
     }
 
@@ -80,7 +80,12 @@ class AuthRolesIT extends IntegrationTestBase {
                 "Blocked",
                 null,
                 null,
-                null
+                null,
+                new InitialPresidentRequest(
+                        "Presidente bloqueado",
+                        "blocked.president@test.local",
+                        AuthDataInitializer.DEFAULT_PASSWORD
+                )
         ));
 
         mockMvc.perform(post("/api/v1/tenants")
