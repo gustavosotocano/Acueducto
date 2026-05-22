@@ -1,6 +1,8 @@
 package com.acueducto.veredal.support;
 
+import com.acueducto.veredal.auth.application.AuthDataInitializer;
 import com.acueducto.veredal.tenants.interfaces.rest.controller.CreateTenantRequest;
+import com.acueducto.veredal.tenants.interfaces.rest.controller.InitialPresidentRequest;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
@@ -45,12 +47,21 @@ public abstract class IntegrationTestBase {
     }
 
     protected void createTenant(String id) throws Exception {
+        createTenant(id, "president." + id + "@test.local", "Presidente " + id);
+    }
+
+    protected void createTenant(String id, String presidentEmail, String presidentFullName) throws Exception {
         String body = objectMapper.writeValueAsString(new CreateTenantRequest(
                 id,
                 "Tenant " + id,
                 null,
                 null,
-                null
+                null,
+                new InitialPresidentRequest(
+                        presidentFullName,
+                        presidentEmail,
+                        AuthDataInitializer.DEFAULT_PASSWORD
+                )
         ));
         mockMvc.perform(withPlatformAuth(post("/api/v1/tenants"))
                         .contentType(MediaType.APPLICATION_JSON)

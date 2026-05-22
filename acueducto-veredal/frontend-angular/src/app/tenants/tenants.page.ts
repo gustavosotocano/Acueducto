@@ -12,7 +12,17 @@ import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatTableModule } from '@angular/material/table';
 import { BehaviorSubject, catchError, map, of, shareReplay, switchMap, tap } from 'rxjs';
 import { PageHeaderComponent } from '../shared/ui/page-header.component';
+import { AbstractControl, ValidationErrors, ValidatorFn } from '@angular/forms';
 import { CreateTenantRequest, Tenant, TenantsService, UpdateTenantRequest } from './tenants.service';
+
+function passwordsMatch(passwordKey: string, confirmKey: string): ValidatorFn {
+  return (group: AbstractControl): ValidationErrors | null => {
+    const password = group.get(passwordKey)?.value;
+    const confirm = group.get(confirmKey)?.value;
+    if (!password && !confirm) return null;
+    return password === confirm ? null : { passwordMismatch: true };
+  };
+}
 
 @Component({
   selector: 'app-tenants-page',
@@ -31,7 +41,10 @@ import { CreateTenantRequest, Tenant, TenantsService, UpdateTenantRequest } from
     PageHeaderComponent,
   ],
   template: `
-    <app-page-header title="Tenants" subtitle="Administración de acueductos veredales.">
+    <app-page-header
+      title="Tenants"
+      subtitle="Administración de acueductos veredales. Al crear, registre también al presidente (RF-067)."
+    >
       <div actions>
         <button mat-icon-button type="button" (click)="openCreate()" aria-label="Agregar tenant">
           <mat-icon>add</mat-icon>
@@ -209,6 +222,33 @@ export class TenantsPage {
           <mat-label>Email</mat-label>
           <input matInput type="email" formControlName="contactEmail" />
         </mat-form-field>
+
+        @if (data.mode === 'create') {
+          <p class="section-title full">Presidente del acueducto</p>
+
+          <mat-form-field appearance="outline" class="full">
+            <mat-label>Nombre del presidente</mat-label>
+            <input matInput formControlName="presidentFullName" />
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="full">
+            <mat-label>Correo del presidente</mat-label>
+            <input matInput type="email" formControlName="presidentEmail" />
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>Contraseña</mat-label>
+            <input matInput type="password" formControlName="presidentPassword" />
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>Confirmar contraseña</mat-label>
+            <input matInput type="password" formControlName="presidentPasswordConfirm" />
+            @if (form.hasError('passwordMismatch')) {
+              <mat-error>Las contraseñas no coinciden</mat-error>
+            }
+          </mat-form-field>
+        }
       </form>
     </div>
     <div mat-dialog-actions align="end">
@@ -221,6 +261,12 @@ export class TenantsPage {
   `,
   styles: `
     .full { grid-column: 1 / -1; }
+    .section-title {
+      grid-column: 1 / -1;
+      margin: 8px 0 0;
+      font-weight: 600;
+      color: var(--mat-sys-on-surface-variant);
+    }
     @media (max-width: 720px) { form { grid-template-columns: 1fr !important; } }
   `,
 })
@@ -229,13 +275,20 @@ export class TenantUpsertDialogComponent {
   private readonly dialogRef = inject(MatDialogRef<TenantUpsertDialogComponent>);
   protected readonly data = inject<{ mode: 'create' } | { mode: 'update'; tenant: Tenant }>(MAT_DIALOG_DATA);
 
-  protected readonly form = this.fb.nonNullable.group({
-    id: ['', [Validators.required, Validators.maxLength(64)]],
-    tenantName: ['', [Validators.required, Validators.maxLength(200)]],
-    contactName: ['', [Validators.maxLength(200)]],
-    contactPhone: ['', [Validators.maxLength(30)]],
-    contactEmail: ['', [Validators.email, Validators.maxLength(150)]],
-  });
+  protected readonly form = this.fb.group(
+    {
+      id: ['', [Validators.required, Validators.maxLength(64)]],
+      tenantName: ['', [Validators.required, Validators.maxLength(200)]],
+      contactName: ['', [Validators.maxLength(200)]],
+      contactPhone: ['', [Validators.maxLength(30)]],
+      contactEmail: ['', [Validators.email, Validators.maxLength(150)]],
+      presidentFullName: ['', [Validators.required, Validators.maxLength(200)]],
+      presidentEmail: ['', [Validators.required, Validators.email, Validators.maxLength(150)]],
+      presidentPassword: ['', [Validators.required, Validators.minLength(8)]],
+      presidentPasswordConfirm: ['', [Validators.required]],
+    },
+    { validators: passwordsMatch('presidentPassword', 'presidentPasswordConfirm') },
+  );
 
   constructor() {
     if (this.data.mode === 'update') {
@@ -248,6 +301,15 @@ export class TenantUpsertDialogComponent {
         contactEmail: t.contactEmail ?? '',
       });
       this.form.controls.id.disable();
+      this.form.controls.presidentFullName.clearValidators();
+      this.form.controls.presidentEmail.clearValidators();
+      this.form.controls.presidentPassword.clearValidators();
+      this.form.controls.presidentPasswordConfirm.clearValidators();
+      this.form.controls.presidentFullName.disable();
+      this.form.controls.presidentEmail.disable();
+      this.form.controls.presidentPassword.disable();
+      this.form.controls.presidentPasswordConfirm.disable();
+      this.form.updateValueAndValidity();
     }
   }
 
@@ -260,18 +322,23 @@ export class TenantUpsertDialogComponent {
     const v = this.form.getRawValue();
     if (this.data.mode === 'create') {
       const payload: CreateTenantRequest = {
-        id: v.id.trim(),
-        tenantName: v.tenantName.trim(),
+        id: v.id!.trim(),
+        tenantName: v.tenantName!.trim(),
         contactName: v.contactName?.trim() || null,
         contactPhone: v.contactPhone?.trim() || null,
         contactEmail: v.contactEmail?.trim() || null,
+        president: {
+          fullName: v.presidentFullName!.trim(),
+          email: v.presidentEmail!.trim(),
+          password: v.presidentPassword!,
+        },
       };
       this.dialogRef.close(payload);
       return;
     }
 
     const payload: UpdateTenantRequest = {
-      tenantName: v.tenantName.trim(),
+      tenantName: v.tenantName!.trim(),
       contactName: v.contactName?.trim() || null,
       contactPhone: v.contactPhone?.trim() || null,
       contactEmail: v.contactEmail?.trim() || null,

@@ -13,12 +13,19 @@ export type Tenant = {
   updatedAt: string;
 };
 
+export type InitialPresidentRequest = {
+  fullName: string;
+  email: string;
+  password: string;
+};
+
 export type CreateTenantRequest = {
   id: string;
   tenantName: string;
   contactName?: string | null;
   contactPhone?: string | null;
   contactEmail?: string | null;
+  president: InitialPresidentRequest;
 };
 
 export type UpdateTenantRequest = {
