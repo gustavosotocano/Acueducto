@@ -5,9 +5,9 @@
 - Configurar datos básicos del tenant
 - Aislar operación por tenant
 - Administrar usuarios operativos por tenant
-- **RF-067** — Crear tenant con presidente inicial en el mismo formulario (backend + UI)
+- **RF-067** — Crear tenant con presidente inicial en el mismo formulario (backend + UI) — [#39](https://github.com/gustavosotocano/Acueducto/issues/39)
   - [stories/RF-067-tenant-create-with-president.md](stories/RF-067-tenant-create-with-president.md)
-- **RF-068** — Usuarios por alcance: admin plataforma (selector tenant) y presidente (solo su tenant, UI + API)
+- **RF-068** — Usuarios por alcance: admin plataforma (selector tenant) y presidente (solo su tenant, UI + API) — [#40](https://github.com/gustavosotocano/Acueducto/issues/40)
   - [stories/RF-068-user-management-by-tenant-scope.md](stories/RF-068-user-management-by-tenant-scope.md)
 
 ## Epic 2. Gestión de dueños
