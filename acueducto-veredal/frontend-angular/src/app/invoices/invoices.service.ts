@@ -43,6 +43,21 @@ export type BatchMonthlySkip = {
   reason: string;
 };
 
+export type ChangeInvoiceStatusRequest = {
+  status: string;
+  note?: string | null;
+};
+
+export type InvoiceStatusHistoryEntry = {
+  id: string;
+  tenantId: string;
+  invoiceId: string;
+  fromStatus: string | null;
+  toStatus: string;
+  changeNote: string | null;
+  changedAt: string;
+};
+
 export type BatchMonthlyInvoiceResponse = {
   billingYear: number;
   billingMonth: number;
@@ -69,8 +84,22 @@ export class InvoicesService {
     return this.http.get<Invoice[]>(`${environment.apiBaseUrl}/invoices`, { params });
   }
 
+  getById(id: string) {
+    return this.http.get<Invoice>(`${environment.apiBaseUrl}/invoices/${id}`);
+  }
+
   create(payload: CreateInvoiceRequest) {
     return this.http.post<Invoice>(`${environment.apiBaseUrl}/invoices`, payload);
+  }
+
+  changeStatus(id: string, payload: ChangeInvoiceStatusRequest) {
+    return this.http.post<Invoice>(`${environment.apiBaseUrl}/invoices/${id}/status`, payload);
+  }
+
+  statusHistory(id: string) {
+    return this.http.get<InvoiceStatusHistoryEntry[]>(
+      `${environment.apiBaseUrl}/invoices/${id}/status-history`,
+    );
   }
 
   runMonthlyBatch(payload: BatchMonthlyInvoiceRequest) {

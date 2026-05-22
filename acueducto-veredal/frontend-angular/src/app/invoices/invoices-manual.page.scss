@@ -1,0 +1,19 @@
+.card {
+  border: 1px solid color-mix(in srgb, var(--mat-sys-outline-variant) 35%, transparent);
+}
+
+.list-table {
+  width: 100%;
+}
+
+.loading {
+  display: grid;
+  place-items: center;
+  height: 240px;
+}
+
+.actions-cell {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+}

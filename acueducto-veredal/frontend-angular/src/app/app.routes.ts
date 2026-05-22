@@ -52,8 +52,21 @@ export const routes: Routes = [
       },
       {
         path: 'invoices',
-        loadComponent: () => import('./invoices/invoices.page').then((m) => m.InvoicesPage),
+        loadComponent: () => import('./invoices/invoices-shell.page').then((m) => m.InvoicesShellPage),
         title: 'Invoices',
+        children: [
+          { path: '', pathMatch: 'full', redirectTo: 'manual' },
+          {
+            path: 'manual',
+            loadComponent: () => import('./invoices/invoices-manual.page').then((m) => m.InvoicesManualPage),
+            title: 'Nueva factura',
+          },
+          {
+            path: 'monthly',
+            loadComponent: () => import('./invoices/invoices-monthly.page').then((m) => m.InvoicesMonthlyPage),
+            title: 'Factura mensual',
+          },
+        ],
       },
       {
         path: 'payments',

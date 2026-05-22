@@ -58,7 +58,7 @@ type NavItem = {
               mat-list-item
               [routerLink]="item.path"
               routerLinkActive="active"
-              [routerLinkActiveOptions]="{ exact: true }"
+              [routerLinkActiveOptions]="item.path === '/invoices/manual' ? { exact: false } : { exact: true }"
             >
               <mat-icon matListItemIcon>{{ item.icon }}</mat-icon>
               <span matListItemTitle>{{ item.label }}</span>
@@ -140,7 +140,7 @@ export class AppShellComponent {
     { label: 'Properties', icon: 'home_work', path: '/properties' },
     { label: 'Water rights', icon: 'water_drop', path: '/water-rights' },
     { label: 'Tarifas', icon: 'request_quote', path: '/connection-tariffs' },
-    { label: 'Invoices', icon: 'receipt_long', path: '/invoices' },
+    { label: 'Invoices', icon: 'receipt_long', path: '/invoices/manual' },
     { label: 'Payments', icon: 'payments', path: '/payments' },
     { label: 'Portfolio', icon: 'account_balance', path: '/portfolio' },
   ];
@@ -163,11 +163,18 @@ export class AppShellComponent {
     shareReplay({ bufferSize: 1, refCount: true }),
   );
 
+  private readonly routeTitles: { prefix: string; title: string }[] = [
+    { prefix: '/invoices/manual', title: 'Nueva factura' },
+    { prefix: '/invoices/monthly', title: 'Factura mensual' },
+  ];
+
   protected readonly currentTitle$ = this.router.events.pipe(
     filter((e) => e instanceof NavigationEnd),
     startWith(null),
     map(() => {
       const url = this.router.url.split('?')[0];
+      const childTitle = this.routeTitles.find((r) => url === r.prefix || url.startsWith(r.prefix + '/'));
+      if (childTitle) return childTitle.title;
       const match = this.allNav.find((n) => n.path === url);
       return match?.label ?? 'Acueducto Veredal';
     }),
