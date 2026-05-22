@@ -71,6 +71,16 @@ Todas las tablas principales deben incluir el campo `tenant_id`.
 ### RF-004. Resolución del tenant en cada request
 El backend debe resolver el tenant en cada request, por ejemplo mediante header HTTP como `X-Tenant-Id`.
 
+### RF-067. Alta de tenant con presidente inicial
+Al crear un tenant, el administrador de plataforma debe poder registrar en el **mismo flujo** el primer usuario responsable del acueducto con rol `PRESIDENT` y `tenant_id` igual al id del tenant. Operación transaccional (tenant + usuario). Detalle: [stories/RF-067-tenant-create-with-president.md](stories/RF-067-tenant-create-with-president.md).
+
+### RF-068. Gestión de usuarios por alcance de tenant
+- **Administrador de plataforma** (`ADMIN`, sin `tenant_id`): puede crear usuarios asignando `tenant_id` explícito (UI con selector de tenant).
+- **Presidente del acueducto** (`PRESIDENT`, con `tenant_id`): crea y administra usuarios solo de su tenant (p. ej. `TREASURY`); no puede asignar usuarios a otros tenants.
+- Incluye reglas en API y pantalla de usuarios. Detalle: [stories/RF-068-user-management-by-tenant-scope.md](stories/RF-068-user-management-by-tenant-scope.md).
+
+**Convención de roles:** no usar `ADMIN` con `tenant_id` para el responsable del acueducto; usar `PRESIDENT`.
+
 ---
 
 ## 3.2 Gestión de propietarios (`owner`)

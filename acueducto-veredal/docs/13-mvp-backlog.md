@@ -5,6 +5,10 @@
 - Configurar datos básicos del tenant
 - Aislar operación por tenant
 - Administrar usuarios operativos por tenant
+- **RF-067** — Crear tenant con presidente inicial en el mismo formulario (backend + UI)
+  - [stories/RF-067-tenant-create-with-president.md](stories/RF-067-tenant-create-with-president.md)
+- **RF-068** — Usuarios por alcance: admin plataforma (selector tenant) y presidente (solo su tenant, UI + API)
+  - [stories/RF-068-user-management-by-tenant-scope.md](stories/RF-068-user-management-by-tenant-scope.md)
 
 ## Epic 2. Gestión de dueños
 - Crear dueño de derecho de agua
@@ -62,6 +66,7 @@
 - OTP por correo
 - Gestión de roles
 - Auditoría de acciones críticas
+- **RF-067** / **RF-068** — Modelo plataforma (`ADMIN` sin tenant) vs acueducto (`PRESIDENT` + operativos `TREASURY`); ver Epic 1
 
 ## Epic 11. Arquitectura backend (habilitadores)
 - **RNF-013** — Fronteras entre módulos: piloto `payments` ↔ `invoices` — [#29](https://github.com/gustavosotocano/Acueducto/issues/29)
