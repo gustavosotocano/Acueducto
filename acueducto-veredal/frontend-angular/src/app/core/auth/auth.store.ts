@@ -55,6 +55,10 @@ export class AuthStore {
     return this.hasRole('ADMIN') && !this.userSignal()?.tenantId;
   }
 
+  canManageUsers() {
+    return this.canManageTenants() || this.hasRole('PRESIDENT');
+  }
+
   private readToken(): string | null {
     return sessionStorage.getItem(TOKEN_KEY);
   }

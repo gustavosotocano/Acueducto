@@ -18,19 +18,51 @@ Referencia de la arquitectura modular del backend y catálogo de endpoints. Comp
 
 ## Fronteras entre módulos (puertos)
 
-Regla de dependencias entre módulos `A` → `B`:
+**Norma:** entre módulos `A` → `B`, el consumidor solo depende de contratos en `application` (puertos + snapshots). La persistencia JPA vive en el módulo **proveedor**, dentro de adaptadores en `infrastructure`.
+
+Regla de dependencias:
 
 | Permitido | No permitido |
 |-----------|--------------|
-| `B.application`, `B.domain`, `shared.*` | `B.infrastructure.persistence.jpa.*`, `*Entity` de otro módulo |
+| `B.application` (puertos, snapshots) | `B.infrastructure.persistence.jpa.*` |
+| `B.domain` (enums, value objects) | `*Entity` de otro módulo |
+| `shared.*` | `B.interfaces.rest.*` |
 
-**Piloto (RNF-013):** `payments` consume facturas vía `InvoicePaymentPort` (`payments/application/port`). La implementación JPA está en `invoices/infrastructure/payment/InvoicePaymentJpaAdapter`. `PaymentService` no importa `invoices.infrastructure.*`.
+Los adaptadores JPA implementan el puerto en el módulo que **posee los datos** (o en el que residen las queries de lectura, p. ej. cartera sobre facturas).
 
-**RNF-014:** `invoices` consulta derechos y tarifas vía `WaterRightBillingPort` y `ConnectionTariffLookupPort` (`invoices/application/port`). Adaptadores: `waterrights/infrastructure/billing`, `tariffs/infrastructure/billing`. `InvoiceService` y `MonthlyInvoiceBatchService` sin imports `waterrights.infrastructure.*` ni `tariffs.infrastructure.*`.
+### Puertos implementados
 
-**RNF-015:** `portfolio` lee cartera vía `PortfolioReadPort` (`portfolio/application/port`). Queries nativas en `invoices/infrastructure/portfolio`; `portfolio` sin `invoices.infrastructure.*`.
+| ID | Consumidor | Puerto | Snapshots | Adaptador (proveedor) |
+|----|------------|--------|-----------|------------------------|
+| RNF-013 | `payments` | `InvoicePaymentPort` | `InvoiceForPayment` | `invoices/infrastructure/payment/InvoicePaymentJpaAdapter` |
+| RNF-014 | `invoices` | `WaterRightBillingPort` | `WaterRightBillingSnapshot` | `waterrights/infrastructure/billing/WaterRightBillingJpaAdapter` |
+| RNF-014 | `invoices` | `ConnectionTariffLookupPort` | `ApplicableTariffSnapshot` | `tariffs/infrastructure/billing/ConnectionTariffLookupJpaAdapter` |
+| RNF-015 | `portfolio` | `PortfolioReadPort` | `WaterRightBalanceSnapshot`, `OwnerBalanceSnapshot`, `OverdueInvoiceSnapshot`, … | `invoices/infrastructure/portfolio/PortfolioReadJpaAdapter` |
+| RNF-016 | `waterrights` | `OwnerLookupPort` | `OwnerSnapshot` | `owners/infrastructure/lookup/OwnerLookupJpaAdapter` |
+| RNF-016 | `waterrights` | `PropertyLookupPort` | `PropertySnapshot` | `properties/infrastructure/lookup/PropertyLookupJpaAdapter` |
 
-**RNF-016:** `waterrights` valida owners y predios vía `OwnerLookupPort` y `PropertyLookupPort` (`waterrights/application/port`). Adaptadores en `owners/infrastructure/lookup` y `properties/infrastructure/lookup`.
+**Decisión consciente (RNF-015):** `PortfolioService` usa `InterestPolicyService` (`interests/application`) directamente. Es acoplamiento en capa application, no JPA cruzado. Un `InterestPolicyPort` es opcional si el módulo `interests` crece.
+
+### Excepciones conocidas (deuda técnica)
+
+Aún hay imports cruzados a JPA ajeno. Seguimiento en [RNF-018 — Puertos restantes](stories/RNF-018-remaining-module-ports.md):
+
+| Consumidor | Importa hoy | Objetivo |
+|------------|-------------|----------|
+| `properties/application` | `owners.infrastructure.persistence.jpa.*` | `OwnerLookupPort` (reutilizar o variante) |
+| `auth/application` | `tenants.infrastructure.persistence.jpa.TenantRepository` | `TenantLookupPort` |
+| `shared/multitenancy` | `tenants.infrastructure.persistence.jpa.TenantRepository` | mismo puerto de tenant |
+
+### Verificación en PR (manual)
+
+Desde `backend/`, buscar imports prohibidos entre módulos de negocio:
+
+```bash
+rg 'import com\.acueducto\.veredal\.(owners|properties|waterrights|invoices|payments|portfolio|tariffs|tenants|auth|interests)\.infrastructure\.persistence' \
+  src/main/java/com/acueducto/veredal/{owners,properties,waterrights,invoices,payments,portfolio,tariffs,tenants,auth,shared}/application
+```
+
+Cada coincidencia debe corresponder a JPA del **mismo** módulo o estar listada en la tabla de excepciones hasta cerrar RNF-018.
 
 ---
 
@@ -107,13 +139,13 @@ flowchart TB
 | **tenants** | Registro de acueductos (`tenant_id`) | `shared` |
 | **auth** | Usuarios, roles, JWT | `tenants`, `shared` |
 | **owners** | Personas dueñas de derechos | `shared` |
-| **properties** | Predios e historial de propiedad | `owners` |
-| **waterrights** | Derecho de agua, transferencias, historial | `owners`, `properties` |
-| **tariffs** | Tarifas por `ConnectionType` | `waterrights.domain` |
-| **invoices** | Facturación manual y batch mensual | `waterrights`, `tariffs` |
-| **payments** | Pagos; marca factura `PAID` | `invoices` |
+| **properties** | Predios e historial de propiedad | `owners` (vía puerto pendiente RNF-018), `shared` |
+| **waterrights** | Derecho de agua, transferencias, historial | `owners`, `properties` (vía `OwnerLookupPort`, `PropertyLookupPort`), `shared` |
+| **tariffs** | Tarifas por `ConnectionType` | `waterrights.domain`, `shared` |
+| **invoices** | Facturación manual y batch mensual | `waterrights`, `tariffs` (vía `WaterRightBillingPort`, `ConnectionTariffLookupPort`), `shared` |
+| **payments** | Pagos; marca factura `PAID` | `invoices` (vía `InvoicePaymentPort`), `shared` |
 | **interests** | Configuración de intereses por mora | `shared` |
-| **portfolio** | Saldos, vencidos, intereses | `invoices`, `interests` |
+| **portfolio** | Saldos, vencidos, intereses | `invoices` (vía `PortfolioReadPort`), `interests` (`InterestPolicyService`), `shared` |
 
 ### Flujo principal del dominio
 
@@ -148,7 +180,7 @@ flowchart LR
 ### Notas de diseño
 
 - Un solo JAR desplegable; separación por paquetes Java (`com.acueducto.veredal.<módulo>`).
-- Los módulos se acoplan de forma pragmática vía repositorios/entidades JPA del otro módulo (hexagonal liviano para el MVP).
+- Los cruces entre módulos de negocio usan **puertos** en `application` y adaptadores JPA en el módulo proveedor (ver tabla arriba y [RNF-013](stories/RNF-013-module-boundaries-and-ports.md)).
 - `waterrights` es el hub del modelo: facturación, cartera y tarifas giran alrededor de él.
 
 ---
@@ -174,7 +206,8 @@ Todos los demás requieren JWT. Algunos endpoints además exigen rol:
 
 | Rol | Endpoints restringidos |
 |-----|------------------------|
-| `ADMIN` | `POST/PUT/POST deactivate` en tenants; todo `/api/v1/users`; `POST /api/v1/payments` |
+| `ADMIN` (plataforma, `tenantId` null) | `POST/PUT/POST deactivate` en tenants; gestión `/api/v1/users` en cualquier tenant (`tenantId` en body o query); `POST /api/v1/payments` |
+| `PRESIDENT` | `/api/v1/users` solo en su tenant; solo crea/actualiza `TREASURY` |
 | `ADMIN` o `TREASURY` | `POST /api/v1/payments` |
 
 ---
@@ -290,13 +323,17 @@ Leyenda: **Auth** = JWT requerido · **Rol** = `@PreAuthorize` adicional · **Te
 
 ### auth · users — `/api/v1/users`
 
+RF-068: admin de plataforma (`ADMIN` sin `tenantId`) usa `tenantId` en body (POST) o query `?tenantId=` (GET). Presidente (`PRESIDENT`) opera solo en su tenant (JWT); body con otro `tenantId` → `403`.
+
 | Método | Ruta | Auth | Rol | Tenant | Descripción |
 |--------|------|------|-----|--------|-------------|
-| `POST` | `/` | Sí | `ADMIN` | Sí | Crear usuario |
-| `GET` | `/` | Sí | `ADMIN` | Sí | Listar usuarios del tenant |
-| `GET` | `/{id}` | Sí | `ADMIN` | Sí | Obtener usuario |
-| `PUT` | `/{id}` | Sí | `ADMIN` | Sí | Actualizar usuario |
-| `POST` | `/{id}/reset-password` | Sí | `ADMIN` | Sí | Reset de contraseña por admin |
+| `POST` | `/` | Sí | `ADMIN`, `PRESIDENT` | No* | Crear usuario (`tenantId` obligatorio para plataforma salvo roles de tenant) |
+| `GET` | `/` | Sí | `ADMIN`, `PRESIDENT` | No* | Listar: plataforma = todos o filtro `tenantId`; presidente = su tenant |
+| `GET` | `/{id}` | Sí | `ADMIN`, `PRESIDENT` | No* | Obtener usuario (alcance por actor) |
+| `PUT` | `/{id}` | Sí | `ADMIN`, `PRESIDENT` | No* | Actualizar usuario (presidente solo `TREASURY`) |
+| `POST` | `/{id}/reset-password` | Sí | `ADMIN`, `PRESIDENT` | No* | Reset de contraseña |
+
+\* No requiere `X-Tenant-Id`; el alcance lo resuelve `UserService` según JWT y parámetros.
 
 ### tenants — `/api/v1/tenants`
 
@@ -435,4 +472,5 @@ Content-Type: application/json
 
 - [ADR-001 — Monolito modular multitenant](11-adr-001-monolith-modular.md)
 - [Estado del backend](14-backend-status.md)
+- [RNF-018 — Puertos restantes](stories/RNF-018-remaining-module-ports.md)
 - [README del backend](../backend/README.md)

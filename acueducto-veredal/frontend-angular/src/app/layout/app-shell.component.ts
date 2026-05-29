@@ -148,7 +148,7 @@ export class AppShellComponent {
   protected visibleNav(): NavItem[] {
     return this.allNav.filter((item) => {
       if (item.path === '/tenants') return this.authStore.canManageTenants();
-      if (item.path === '/users') return this.authStore.hasRole('ADMIN');
+      if (item.path === '/users') return this.authStore.canManageUsers();
       if (item.path === '/payments') return this.authStore.canRegisterPayments();
       return true;
     });

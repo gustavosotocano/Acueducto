@@ -27,7 +27,7 @@ export const routes: Routes = [
       {
         path: 'users',
         loadComponent: () => import('./users/users.page').then((m) => m.UsersPage),
-        canActivate: [roleGuard(['ADMIN'])],
+        canActivate: [roleGuard(['ADMIN', 'PRESIDENT'])],
         title: 'Usuarios',
       },
       {
