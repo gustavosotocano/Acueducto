@@ -8,7 +8,7 @@
 | **Épica** | Seguridad · Gestión de tenants |
 | **Requisitos relacionados** | RF-001, RF-002, RF-004, RNF-005 |
 | **Depende de** | [RF-067](RF-067-tenant-create-with-president.md) (presidente inicial opcional pero recomendado) |
-| **Estado actual** | `POST /users` acepta `tenantId`; UI no lo expone; sin restricción fuerte por actor |
+| **Estado actual** | Implementado (PR #42): API y UI por alcance plataforma / presidente |
 
 ---
 
