@@ -34,8 +34,9 @@ export interface UpdateUserRequest {
 export class UsersService {
   private readonly http = inject(HttpClient);
 
-  list(): Observable<AppUser[]> {
-    return this.http.get<AppUser[]>(`${environment.apiBaseUrl}/users`);
+  list(tenantId?: string): Observable<AppUser[]> {
+    const params = tenantId ? { tenantId } : undefined;
+    return this.http.get<AppUser[]>(`${environment.apiBaseUrl}/users`, { params });
   }
 
   create(request: CreateUserRequest): Observable<AppUser> {

@@ -12,7 +12,7 @@ import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/v1/users")
-@PreAuthorize("hasRole('ADMIN')")
+@PreAuthorize("hasAnyRole('ADMIN','PRESIDENT')")
 public class UserController {
 
     private final UserService userService;
@@ -34,8 +34,8 @@ public class UserController {
     }
 
     @GetMapping
-    public List<UserResponse> list() {
-        return userService.listForCurrentTenant().stream().map(this::toResponse).toList();
+    public List<UserResponse> list(@RequestParam(required = false) String tenantId) {
+        return userService.list(tenantId).stream().map(this::toResponse).toList();
     }
 
     @GetMapping("/{id}")
