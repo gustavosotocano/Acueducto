@@ -1,0 +1,26 @@
+.filter {
+  width: 100%;
+  max-width: 360px;
+  margin-bottom: 12px;
+}
+
+.actions-cell {
+  display: flex;
+  gap: 4px;
+  justify-content: flex-end;
+  align-items: center;
+}
+
+.card {
+  border: 1px solid color-mix(in srgb, var(--mat-sys-outline-variant) 35%, transparent);
+}
+
+.dialog-form {
+  display: grid;
+  gap: 12px;
+  min-width: min(100%, 320px);
+}
+
+.full {
+  width: 100%;
+}
