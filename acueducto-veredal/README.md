@@ -37,7 +37,7 @@ Digitalizar y organizar la operación del acueducto veredal mediante una platafo
 - Backend: Spring Boot
 - Base de datos: PostgreSQL
 - Infraestructura local: Docker Compose
-- Estilo arquitectónico: Monolito modular multitenant
+- Estilo arquitectónico: Monolito modular multitenant (comunicación entre módulos del backend por **puertos**; ver [docs/15-backend-modules-and-api.md](docs/15-backend-modules-and-api.md))
 
 ## Estructura del repositorio
 
@@ -50,6 +50,9 @@ Digitalizar y organizar la operación del acueducto veredal mediante una platafo
 
 - `docs/sdlc.md` — flujo de desarrollo, QA y verificaciones (`./scripts/ci.sh`)
 - `docs/phrases-to-start.md` — frases para operar con el agente
+- `docs/11-adr-001-monolith-modular.md` — decisión de arquitectura
+- `docs/15-backend-modules-and-api.md` — módulos, puertos entre dominios y API REST
+- `docs/14-backend-status.md` — estado de implementación del backend
 - `docs/01-vision.md`
 - `docs/05-business-rules.md`
 - `docs/06-domain-model.md`

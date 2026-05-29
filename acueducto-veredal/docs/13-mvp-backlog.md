@@ -9,6 +9,8 @@
   - [stories/RF-067-tenant-create-with-president.md](stories/RF-067-tenant-create-with-president.md)
 - **RF-068** — Usuarios por alcance: admin plataforma (selector tenant) y presidente (solo su tenant, UI + API) — [#40](https://github.com/gustavosotocano/Acueducto/issues/40)
   - [stories/RF-068-user-management-by-tenant-scope.md](stories/RF-068-user-management-by-tenant-scope.md)
+- **RF-UI-068** — Usuarios: validar patrón listado + modales (crear/editar/desactivar) — [#43](https://github.com/gustavosotocano/Acueducto/issues/43)
+  - [stories/RF-UI-068-users-list-modal-pattern.md](stories/RF-UI-068-users-list-modal-pattern.md)
 
 ## Epic 2. Gestión de dueños
 - Crear dueño de derecho de agua
@@ -69,13 +71,19 @@
 - **RF-067** / **RF-068** — Modelo plataforma (`ADMIN` sin tenant) vs acueducto (`PRESIDENT` + operativos `TREASURY`); ver Epic 1
 
 ## Epic 11. Arquitectura backend (habilitadores)
-- **RNF-013** — Fronteras entre módulos: piloto `payments` ↔ `invoices` — [#29](https://github.com/gustavosotocano/Acueducto/issues/29)
+
+### Completado — fronteras por puertos
+- **RNF-013** — Fronteras entre módulos (`payments` ↔ `invoices`) — [#29](https://github.com/gustavosotocano/Acueducto/issues/29)
   - [stories/RNF-013-module-boundaries-and-ports.md](stories/RNF-013-module-boundaries-and-ports.md)
 - **RNF-014** — Puertos `invoices` ↔ `waterrights` / `tariffs` — [#30](https://github.com/gustavosotocano/Acueducto/issues/30)
   - [stories/RNF-014-invoices-waterrights-tariffs-ports.md](stories/RNF-014-invoices-waterrights-tariffs-ports.md)
-- **RNF-015** — Puertos `portfolio` ↔ `invoices` / `interests` — [#31](https://github.com/gustavosotocano/Acueducto/issues/31)
+- **RNF-015** — Puertos `portfolio` ↔ `invoices` — [#31](https://github.com/gustavosotocano/Acueducto/issues/31)
   - [stories/RNF-015-portfolio-invoices-interests-ports.md](stories/RNF-015-portfolio-invoices-interests-ports.md)
 - **RNF-016** — Puertos `waterrights` ↔ `owners` / `properties` — [#32](https://github.com/gustavosotocano/Acueducto/issues/32)
   - [stories/RNF-016-waterrights-owners-properties-ports.md](stories/RNF-016-waterrights-owners-properties-ports.md)
+
+### Pendiente
+- **RNF-018** — Puertos restantes: `properties` ↔ `owners`, `auth` / `shared` ↔ `tenants`
+  - [stories/RNF-018-remaining-module-ports.md](stories/RNF-018-remaining-module-ports.md)
 - **RNF-017** — Virtual threads + `ScopedValue` para `TenantContext` — [#33](https://github.com/gustavosotocano/Acueducto/issues/33)
   - [stories/RNF-017-virtual-threads-and-tenant-context.md](stories/RNF-017-virtual-threads-and-tenant-context.md)

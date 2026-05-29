@@ -103,6 +103,7 @@ Checklist mínimo del revisor (GitHub **Files changed** + comentarios):
 - [ ] El cambio responde a la RF/issue (sin scope creep innecesario)
 - [ ] `./scripts/ci.sh` verde (o pipeline equivalente)
 - [ ] Convenciones del repo (multitenant, soft delete, trazabilidad si aplica)
+- [ ] Backend: sin imports `*.infrastructure.persistence.jpa` de **otro** módulo (cruces vía puertos; ver [15-backend-modules-and-api.md](15-backend-modules-and-api.md#fronteras-entre-módulos-puertos))
 - [ ] Tests cubren el comportamiento nuevo o regresión relevante
 - [ ] Sin secretos, sin `console.log` / código muerto evidente
 - [ ] Documentación actualizada si cambió contrato o arquitectura
@@ -161,4 +162,5 @@ Ver [`phrases-to-start.md`](./phrases-to-start.md) — ejemplos:
 - `docs/acueducto-veredal-requerimientos.md` — requerimientos (RF)
 - `docs/13-mvp-backlog.md` — épicas MVP
 - `docs/14-backend-status.md` — estado de implementación backend
+- `docs/15-backend-modules-and-api.md` — módulos, puertos y API REST
 - `docs/05-business-rules.md` — reglas de negocio

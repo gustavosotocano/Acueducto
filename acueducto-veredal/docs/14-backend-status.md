@@ -2,6 +2,19 @@
 
 Documento de referencia para saber qué está implementado hoy en el backend `acueducto-veredal` y qué falta vs `docs/acueducto-veredal-requerimientos.md`.
 
+## Arquitectura modular (puertos)
+
+Los cruces principales entre módulos usan puertos en `application` (sin JPA cruzado). Catálogo completo: [15-backend-modules-and-api.md](15-backend-modules-and-api.md#fronteras-entre-módulos-puertos).
+
+| Cruce | Puerto |
+|-------|--------|
+| `payments` → `invoices` | `InvoicePaymentPort` |
+| `invoices` → `waterrights` / `tariffs` | `WaterRightBillingPort`, `ConnectionTariffLookupPort` |
+| `portfolio` → `invoices` | `PortfolioReadPort` |
+| `waterrights` → `owners` / `properties` | `OwnerLookupPort`, `PropertyLookupPort` |
+
+**Pendiente (RNF-018):** `properties` → `owners`, `auth` y `shared` → `tenants` aún importan repositorios JPA ajenos. Ver [stories/RNF-018-remaining-module-ports.md](stories/RNF-018-remaining-module-ports.md).
+
 ## Implementado
 
 ### Multitenancy

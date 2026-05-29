@@ -371,19 +371,22 @@ Las pruebas de persistencia e integración deben apoyarse en **Testcontainers + 
 ## RNF-013. Fronteras entre módulos del backend
 Los módulos del monolito no deben importar `infrastructure.persistence.jpa` de otros módulos. Los cruces entre dominios deben hacerse mediante **puertos** (interfaces en capa `application`) y DTOs/snapshots de aplicación, con adaptadores JPA en el módulo proveedor de datos.
 
-Implementación incremental; caso piloto obligatorio: cruce `payments` ↔ `invoices`. Detalle: [stories/RNF-013-module-boundaries-and-ports.md](stories/RNF-013-module-boundaries-and-ports.md) · Issue [#29](https://github.com/gustavosotocano/Acueducto/issues/29).
+**Estado:** completado (patrón y piloto `payments` ↔ `invoices`; rollout en RNF-014–016). Excepciones restantes: [RNF-018](stories/RNF-018-remaining-module-ports.md). Detalle: [stories/RNF-013-module-boundaries-and-ports.md](stories/RNF-013-module-boundaries-and-ports.md) · Issue [#29](https://github.com/gustavosotocano/Acueducto/issues/29).
 
 ## RNF-014. Puertos invoices ↔ waterrights / tariffs
-Refactor del cruce de facturación con derechos de agua y tarifas. Detalle: [stories/RNF-014-invoices-waterrights-tariffs-ports.md](stories/RNF-014-invoices-waterrights-tariffs-ports.md) · Issue [#30](https://github.com/gustavosotocano/Acueducto/issues/30).
+**Estado:** completado. Detalle: [stories/RNF-014-invoices-waterrights-tariffs-ports.md](stories/RNF-014-invoices-waterrights-tariffs-ports.md) · Issue [#30](https://github.com/gustavosotocano/Acueducto/issues/30).
 
 ## RNF-015. Puertos portfolio ↔ invoices / interests
-Refactor de consultas de cartera desacopladas del JPA de facturas. Detalle: [stories/RNF-015-portfolio-invoices-interests-ports.md](stories/RNF-015-portfolio-invoices-interests-ports.md) · Issue [#31](https://github.com/gustavosotocano/Acueducto/issues/31).
+**Estado:** completado (lectura de cartera vía `PortfolioReadPort`; `interests` sigue en application directa). Detalle: [stories/RNF-015-portfolio-invoices-interests-ports.md](stories/RNF-015-portfolio-invoices-interests-ports.md) · Issue [#31](https://github.com/gustavosotocano/Acueducto/issues/31).
 
 ## RNF-016. Puertos waterrights ↔ owners / properties
-Refactor del núcleo `water_right` desacoplado de owners y predios. Detalle: [stories/RNF-016-waterrights-owners-properties-ports.md](stories/RNF-016-waterrights-owners-properties-ports.md) · Issue [#32](https://github.com/gustavosotocano/Acueducto/issues/32).
+**Estado:** completado para `waterrights`. Detalle: [stories/RNF-016-waterrights-owners-properties-ports.md](stories/RNF-016-waterrights-owners-properties-ports.md) · Issue [#32](https://github.com/gustavosotocano/Acueducto/issues/32).
 
 ## RNF-017. Virtual threads y contexto de tenant
 Habilitar virtual threads en Spring Boot (`spring.threads.virtual.enabled`) y reemplazar `ThreadLocal` en `TenantContext` por `ScopedValue` para evitar problemas de memoria y contexto con alto volumen de hilos virtuales. Detalle: [stories/RNF-017-virtual-threads-and-tenant-context.md](stories/RNF-017-virtual-threads-and-tenant-context.md) · Issue [#33](https://github.com/gustavosotocano/Acueducto/issues/33).
+
+## RNF-018. Puertos restantes (properties, auth, shared ↔ tenants/owners)
+Eliminar los últimos imports cruzados a JPA ajeno: `properties` → `owners`, `auth` → `tenants`, `shared` → `tenants`. Detalle: [stories/RNF-018-remaining-module-ports.md](stories/RNF-018-remaining-module-ports.md).
 
 ---
 

@@ -1,6 +1,23 @@
 # Acueducto Veredal Backend
 
-Base inicial en Spring Boot para un sistema de acueducto veredal multi-tenant.
+Backend en Spring Boot para un sistema de acueducto veredal multi-tenant.
+
+## Arquitectura modular
+
+- **Monolito modular:** un solo JAR, módulos por paquete (`com.acueducto.veredal.<módulo>`).
+- **Hexagonal por módulo:** `interfaces` → `application` → `infrastructure/persistence/jpa`.
+- **Cruces entre módulos:** solo vía **puertos** en `application` + snapshots; la JPA vive en adaptadores del módulo proveedor.
+
+Catálogo de módulos, puertos y API: [docs/15-backend-modules-and-api.md](../docs/15-backend-modules-and-api.md).
+
+| Cruce | Puerto |
+|-------|--------|
+| `payments` → `invoices` | `InvoicePaymentPort` |
+| `invoices` → `waterrights` / `tariffs` | `WaterRightBillingPort`, `ConnectionTariffLookupPort` |
+| `portfolio` → `invoices` | `PortfolioReadPort` |
+| `waterrights` → `owners` / `properties` | `OwnerLookupPort`, `PropertyLookupPort` |
+
+**Pendiente:** [RNF-018](../docs/stories/RNF-018-remaining-module-ports.md) — `properties` → `owners`, `auth` y `shared` → `tenants` aún importan JPA ajeno.
 
 ## Decisiones incluidas
 
@@ -63,10 +80,8 @@ mvn spring-boot:run
 X-Tenant-Id: demo
 ```
 
-## Próximos pasos recomendados
+## Documentación
 
-1. Completar entidades `PropertyEntity`, `WaterMeterEntity` y sus endpoints.
-2. Implementar update/deactivate para `owner` y `water_right`.
-3. Crear caso de uso de cambio de propiedad (`property_owner_history`).
-4. Agregar enforcement fuerte de tenant en capa repositorio/hibernate filter.
-5. Incorporar tests con Testcontainers y fixtures Flyway.
+- [Estado del backend](../docs/14-backend-status.md)
+- [Módulos, puertos y API REST](../docs/15-backend-modules-and-api.md)
+- [ADR-001 — Monolito modular](../docs/11-adr-001-monolith-modular.md)

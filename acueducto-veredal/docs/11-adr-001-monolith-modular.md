@@ -13,6 +13,7 @@ Implementar el sistema como un monolito modular multitenant con:
 - Spring Boot en backend
 - PostgreSQL en base de datos
 - aislamiento lógico mediante `tenant_id`
+- fronteras entre módulos del backend mediante **puertos** en capa `application` (sin importar JPA de otros módulos); ver [15-backend-modules-and-api.md](15-backend-modules-and-api.md)
 
 ## Razones
 - menor complejidad inicial
@@ -25,6 +26,7 @@ Implementar el sistema como un monolito modular multitenant con:
 - desarrollo más rápido del MVP
 - menor costo operativo
 - trazabilidad más simple
+- cruces entre dominios acotados por contratos (puertos), lo que facilita pruebas unitarias por módulo
 
 ### Negativas
 - requiere disciplina fuerte en aislamiento por tenant

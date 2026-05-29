@@ -37,7 +37,11 @@ Construir una app funcional, moderna y agradable visualmente (no solo CRUD). El 
 - Topbar con usuario, título de sección y acciones principales.
 - En móvil: navegación adaptada y **tablas convertidas en cards**.
 - Tablas con búsqueda, filtros, paginación y acciones claras.
-- Formularios limpios, agrupados por secciones y con validación visible.
+- **Pantallas centradas en listado:** cada feature debe mostrar principalmente el **listado** (tabla en desktop, cards en móvil). Las operaciones de **crear**, **modificar** y **eliminar** (o desactivar) no ocupan una ruta/página aparte: se abren en un **modal** (dialog de Angular Material) desde acciones visibles en la lista (botón “Nuevo”, fila con “Editar” / “Eliminar”, etc.).
+  - El modal contiene el formulario o la confirmación; al guardar o cancelar, se cierra y se **refresca el listado** sin salir de la pantalla.
+  - Evitar pantallas duplicadas tipo “listado + formulario en página completa” salvo flujos excepcionales documentados (p. ej. wizard largo).
+  - Reutilizar el mismo patrón en features nuevas y al refactorizar pantallas legacy.
+- Formularios limpios, agrupados por secciones y con validación visible (dentro del modal cuando aplique).
 - Uso de colores con propósito:
   - Azul: acciones principales / confianza.
   - Verde: pagos realizados / estados correctos.

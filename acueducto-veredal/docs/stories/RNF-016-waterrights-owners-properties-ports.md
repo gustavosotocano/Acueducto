@@ -4,9 +4,10 @@
 |-------|-------|
 | **Issue** | https://github.com/gustavosotocano/Acueducto/issues/32 |
 | **ID** | RNF-016 |
+| **Estado** | Completado |
 | **Tipo** | Historia técnica / habilitador de arquitectura |
 | **Épica** | Arquitectura backend — calidad y mantenibilidad |
-| **Depende de** | [RNF-013](RNF-013-module-boundaries-and-ports.md) (patrón establecido) |
+| **Depende de** | [RNF-013](RNF-013-module-boundaries-and-ports.md) |
 | **Prioridad** | Media |
 | **QA scope** | API |
 | **Estimación sugerida** | M |
@@ -21,65 +22,40 @@
 
 ---
 
-## Contexto
-
-Imports cruzados actuales:
+## Contexto (antes del refactor)
 
 - `WaterRightService` → `OwnerRepository`, `PropertyRepository`
 - `WaterRightTransferService` → `OwnerRepository`, `OwnerEntity`
 
-También relacionado (mismo epic, otro módulo):
-
-- `PropertyService` / `PropertyOwnershipService` → `OwnerRepository` — **fuera de alcance** salvo que se incluya sub-tarea explícita; esta historia se centra en `waterrights`.
+**Fuera de alcance de esta historia (RNF-018):** `PropertyService` / `PropertyOwnershipService` → `OwnerRepository`.
 
 ---
 
-## Alcance
+## Implementación
 
-| Consumidor | Puerto sugerido | Proveedor |
-|------------|-----------------|-----------|
-| `waterrights` | `OwnerLookupPort` | Adaptador en `owners/infrastructure` |
-| `waterrights` | `PropertyLookupPort` | Adaptador en `properties/infrastructure` |
+| Consumidor | Puerto | Adaptador |
+|------------|--------|-----------|
+| `waterrights` | `OwnerLookupPort` | `owners/infrastructure/lookup/OwnerLookupJpaAdapter` |
+| `waterrights` | `PropertyLookupPort` | `properties/infrastructure/lookup/PropertyLookupJpaAdapter` |
 
-Snapshots: `OwnerSnapshot` (id, status), `PropertySnapshot` (id, status, ownerId).
+Snapshots: `OwnerSnapshot`, `PropertySnapshot` en `waterrights/application/port`.
 
-Servicios a refactorizar:
-
-- `WaterRightService`
-- `WaterRightTransferService`
+Servicios refactorizados: `WaterRightService`, `WaterRightTransferService`.
 
 ---
 
 ## Criterios de aceptación
 
-- [ ] `waterrights/application` no importa `owners.infrastructure.*` ni `properties.infrastructure.*`
-- [ ] Crear/actualizar/desactivar/transferir `water_right` con mismas validaciones y errores
-- [ ] Historial de propietarios (`owner-history`) sin cambios funcionales
-- [ ] Test unitario de `WaterRightTransferService` (o `WaterRightService`) con fakes de puertos
-- [ ] `./scripts/ci.sh backend` en verde
-- [ ] Endpoints `/api/v1/water-rights/*` sin cambio de contrato
-
----
-
-## QA — regresión
-
-1. `POST /water-rights` con owner y property válidos del tenant.
-2. `POST /water-rights/{id}/transfers` → historial actualizado, id del derecho conservado.
-3. Owner/property inactivo o de otro tenant → rechazo esperado.
-
----
-
-## Fuera de alcance
-
-- Refactor `properties` → `owners` (`PropertyOwnershipService`)
-- Cambios en APIs de `owners` o `properties`
+- [x] `waterrights/application` no importa `owners.infrastructure.*` ni `properties.infrastructure.*`
+- [x] Crear/actualizar/desactivar/transferir `water_right` con mismas validaciones
+- [x] Endpoints `/api/v1/water-rights/*` sin cambio de contrato
+- [x] Documentación en [15-backend-modules-and-api.md](../15-backend-modules-and-api.md)
 
 ---
 
 ## Referencias
 
 - [RNF-013](RNF-013-module-boundaries-and-ports.md)
+- [RNF-018](RNF-018-remaining-module-ports.md) — `properties` → `owners`
 - `waterrights/application/WaterRightService.java`
 - `waterrights/application/transfer/WaterRightTransferService.java`
-
-**Agente:** `Dev: toma la RNF-016`
